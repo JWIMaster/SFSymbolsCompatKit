@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "swiftsvg",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/JWIMaster/SwiftSVG.git",
+      "state" : {
+        "branch" : "master",
+        "revision" : "1a55ea3451c6a80264d6c6809f54af56530f4b5e"
+      }
+    }
+  ],
+  "version" : 2
+}
