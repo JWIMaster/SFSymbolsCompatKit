@@ -14,17 +14,10 @@ public extension UIImage {
     ///   - pointSize: desired size in points, default 100
     ///   - scale: image scale, default is device main screen scale
     convenience init?(systemName name: String,
-                      weight: SFSymbolWeight,
+                      weight: SFSymbolWeight = .regular,
                       pointSize: CGFloat = 100,
                       scale: CGFloat = UIScreen.main.scale) {
         
-        // Use native SF Symbols on iOS 13+
-        if #available(iOS 13.0, *) {
-            if let img = UIImage(systemName: name) {
-                self.init(cgImage: img.cgImage!)
-                return
-            }
-        }
         
         // Determine folder for weight
         let folderName = weight.rawValue
@@ -36,10 +29,10 @@ public extension UIImage {
         var url = bundle.url(forResource: name, withExtension: "svg", subdirectory: "Assets/\(folderName)")
         
         // Fallback to regular weight
-        /*if url == nil {
+        if url == nil {
             url = bundle.url(forResource: name, withExtension: "svg", subdirectory: "Assets/regular")
             print("grrr")
-        }*/
+        }
         guard let svgURL = url else { return nil }
         
         // Load SVG layer
