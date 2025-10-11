@@ -29,6 +29,8 @@ public extension UIImage {
         // Determine folder for weight
         let folderName = weight.rawValue
         
+        print(folderName)
+        
         // Use the package bundle
         let bundle = Bundle.module
         var url = bundle.url(forResource: name, withExtension: "svg", subdirectory: "Assets/\(folderName)")
@@ -36,6 +38,7 @@ public extension UIImage {
         // Fallback to regular weight
         if url == nil {
             url = bundle.url(forResource: name, withExtension: "svg", subdirectory: "Assets/regular")
+            print("grrr")
         }
         guard let svgURL = url else { return nil }
         
@@ -83,3 +86,4 @@ public extension UIImage {
         self.init(systemName: name, weight: .regular, pointSize: 100, scale: scale)
     }
 }
+
