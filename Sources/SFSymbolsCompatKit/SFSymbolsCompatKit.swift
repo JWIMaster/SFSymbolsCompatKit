@@ -14,7 +14,7 @@ public extension UIImage {
     ///   - pointSize: desired size in points, default 100
     ///   - scale: image scale, default is device main screen scale
     convenience init?(systemName name: String,
-                      weight: SFSymbolWeight = .regular,
+                      weight: SFSymbolWeight,
                       pointSize: CGFloat = 100,
                       scale: CGFloat = UIScreen.main.scale) {
         
@@ -36,10 +36,10 @@ public extension UIImage {
         var url = bundle.url(forResource: name, withExtension: "svg", subdirectory: "Assets/\(folderName)")
         
         // Fallback to regular weight
-        if url == nil {
+        /*if url == nil {
             url = bundle.url(forResource: name, withExtension: "svg", subdirectory: "Assets/regular")
             print("grrr")
-        }
+        }*/
         guard let svgURL = url else { return nil }
         
         // Load SVG layer
