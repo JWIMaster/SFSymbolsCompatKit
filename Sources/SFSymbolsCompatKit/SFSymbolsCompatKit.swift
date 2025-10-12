@@ -99,6 +99,7 @@ public extension UIImage {
     convenience init?(systemName name: String, withConfiguration config: UIImage.SymbolConfigurationA? = nil) {
         let config = config ?? UIImage.SymbolConfigurationA()
         
+        // Scale the font
         var fontSize = config.pointSize * 1.22
         switch config.scale {
         case .small: fontSize *= 0.75
@@ -116,14 +117,13 @@ public extension UIImage {
         
         let symbolSize = attrString.size()
         
-        // Use a generous image height to avoid clipping
+        // generous height to prevent clipping
         let lineHeight = font.ascender - font.descender
-        let extraPadding: CGFloat = fontSize * 0.2 // 20% extra space above and below
-        let imageSize = CGSize(width: symbolSize.width, height: lineHeight + extraPadding)
+        let padding: CGFloat = fontSize * 0.3 // 30% extra space above and below
+        let imageSize = CGSize(width: symbolSize.width, height: lineHeight + padding)
         
-        // Compute vertical offset to roughly center the symbol
-        // You can tweak this factor per font weight if needed
-        let verticalOffset = (imageSize.height - symbolSize.height) / 2 - (extraPadding / 2)
+        // Correct vertical offset to center symbol visually
+        let verticalOffset = (imageSize.height - symbolSize.height) / 2 + padding / 2
         
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
         attrString.draw(at: CGPoint(x: 0, y: verticalOffset))
