@@ -19,7 +19,7 @@ public class SFSymbols {
     }
     
     private func loadLookup() {
-        guard let url = Bundle.main.url(forResource: "glyph_lookup", withExtension: "json"),
+        guard let url = Bundle.module.url(forResource: "glyph_lookup", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: [String: String]] else {
             print("Failed to load glyph lookup")
@@ -30,7 +30,7 @@ public class SFSymbols {
     
     private func registerFonts() {
         for weight in availableWeights {
-            guard let url = Bundle.main.url(forResource: "SFSymbols-\(weight.rawValue)", withExtension: "ttf") else { continue }
+            guard let url = Bundle.module.url(forResource: "SFSymbols-\(weight.rawValue)", withExtension: "ttf") else { continue }
             CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
         }
     }
