@@ -1,81 +1,87 @@
 import UIKit
-import SwiftSVG
+import CoreText
 
-public enum SFSymbolWeight: String {
+// MARK: - Symbol Weight
+public enum SymbolWeightA: String {
     case ultralight, thin, light, regular, medium, semibold, bold, heavy, black
 }
 
+// MARK: - SFSymbols Manager
+public class SFSymbols {
+    public static let shared = SFSymbols()
+    
+    public var lookup: [String: [String: String]] = [:] // weight -> name -> unicode
+    private let availableWeights: [SymbolWeightA] = [.ultralight,.thin,.light,.regular,.medium,.semibold,.bold,.heavy,.black]
+    
+    private init() {
+        loadLookup()
+        registerFonts()
+    }
+    
+    private func loadLookup() {
+        guard let url = Bundle.main.url(forResource: "glyph_lookup", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: [String: String]] else {
+            print("Failed to load glyph lookup")
+            return
+        }
+        lookup = json
+    }
+    
+    private func registerFonts() {
+        for weight in availableWeights {
+            guard let url = Bundle.module.url(forResource: "SFSymbols-\(weight.rawValue)", withExtension: "ttf") else { continue }
+            CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+        }
+    }
+    
+    public func font(weight: SymbolWeightA, size: CGFloat) -> UIFont? {
+        return UIFont(name: "SFSymbols-\(weight.rawValue)", size: size)
+    }
+    
+    public func unicode(for name: String, weight: SymbolWeightA = .regular) -> String? {
+        guard let hex = lookup[weight.rawValue]?[name],
+              let codePoint = UInt32(hex, radix: 16),
+              let scalar = UnicodeScalar(codePoint) else { return nil }
+        return String(scalar)
+    }
+}
+
+// MARK: - UIImage Backport
 public extension UIImage {
     
-    /// Backported SF Symbols initializer with robust SVG handling
-    convenience init?(systemName name: String,
-                      weight: SFSymbolWeight = .regular,
-                      pointSize: CGFloat = 100,
-                      scale: CGFloat = UIScreen.main.scale) {
+    static func systemName(_ name: String, weight: SymbolWeightA = .regular, pointSize: CGFloat = 30, color: UIColor = UIColor.black) -> UIImage? {
+        guard let unicode = SFSymbols.shared.unicode(for: name, weight: weight),
+              let font = SFSymbols.shared.font(weight: weight, size: pointSize) else { return nil }
         
-        // Determine folder for weight
-        let folderName = weight.rawValue
+        let attrString = NSAttributedString(string: unicode, attributes: [
+            NSAttributedString.Key.font: font,
+            NSAttributedString.Key.foregroundColor: color
+        ])
         
-        // Use the package bundle
-        let bundle = Bundle.module
-        var url = bundle.url(forResource: name, withExtension: "svg", subdirectory: "Assets/\(folderName)")
-        
-        // Fallback to regular weight
-        if url == nil {
-            url = bundle.url(forResource: name, withExtension: "svg", subdirectory: "Assets/regular")
-        }
-        guard let svgURL = url else { return nil }
-        
-        // Load SVG layer
-        let containerView = UIView(frame: CGRect(origin: .zero, size: CGSize(width: pointSize, height: pointSize)))
-        containerView.backgroundColor = .clear
-        
-        var svgLayer: CALayer?
-        let semaphore = DispatchSemaphore(value: 0) // force synchronous execution
-        
-        UIView(SVGURL: svgURL) { layer in
-            // Skip unsupported elements gracefully
-            if layer.bounds.width > 0 && layer.bounds.height > 0 {
-                let originalBounds = layer.bounds
-                let scaleX = pointSize / originalBounds.width
-                let scaleY = pointSize / originalBounds.height
-                let scaleFactor = min(scaleX, scaleY)
-                layer.setAffineTransform(CGAffineTransform(scaleX: scaleFactor, y: scaleFactor))
-                layer.position = CGPoint(x: pointSize/2, y: pointSize/2)
-                svgLayer = layer
-            }
-            semaphore.signal()
-        }
-        
-        // Wait for layer to be prepared
-        semaphore.wait()
-        
-        guard let layer = svgLayer else { return nil }
-        containerView.layer.addSublayer(layer)
-        
-        // Render to UIImage at the desired scale
-        UIGraphicsBeginImageContextWithOptions(CGSize(width: pointSize, height: pointSize), false, scale)
-        guard let context = UIGraphicsGetCurrentContext() else { return nil }
-        containerView.layer.render(in: context)
-        guard let renderedImage = UIGraphicsGetImageFromCurrentImageContext() else {
-            UIGraphicsEndImageContext()
-            return nil
-        }
+        let size = attrString.size()
+        UIGraphicsBeginImageContextWithOptions(size, false, 0)
+        attrString.draw(at: CGPoint.zero)
+        let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
-        
-        self.init(cgImage: renderedImage.cgImage!)
+        return image
     }
-    
-    // Convenience initializers for regular SF Symbols API
-    convenience init?(systemName name: String, weight: SFSymbolWeight) {
-        self.init(systemName: name, weight: weight, pointSize: 100, scale: UIScreen.main.scale)
+}
+
+// MARK: - UILabel Convenience
+public extension UILabel {
+    func setSymbol(_ name: String, weight: SymbolWeightA = .regular, size: CGFloat = 30, color: UIColor = UIColor.black) {
+        self.font = SFSymbols.shared.font(weight: weight, size: size)
+        self.textColor = color
+        self.text = SFSymbols.shared.unicode(for: name, weight: weight)
     }
-    
-    convenience init?(systemName name: String, pointSize: CGFloat) {
-        self.init(systemName: name, weight: .regular, pointSize: pointSize, scale: UIScreen.main.scale)
-    }
-    
-    convenience init?(systemName name: String, scale: CGFloat) {
-        self.init(systemName: name, weight: .regular, pointSize: 100, scale: scale)
+}
+
+// MARK: - UIButton Convenience
+public extension UIButton {
+    func setSymbol(_ name: String, weight: SymbolWeightA = .regular, size: CGFloat = 30, color: UIColor = UIColor.black, forState state: UIControl.State = []) {
+        if let image = UIImage.systemName(name, weight: weight, pointSize: size, color: color) {
+            self.setImage(image, for: state)
+        }
     }
 }
