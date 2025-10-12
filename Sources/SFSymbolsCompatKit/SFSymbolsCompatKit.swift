@@ -100,34 +100,40 @@ public extension UIImage {
         let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
 
         // Adjust font size according to scale
-        var fontSize = config.pointSize*1.22
+        var fontSize = config.pointSize * 1.22
         switch config.scale {
         case .small: fontSize *= 0.75
         case .medium: break
         case .large: fontSize *= 1.25
         }
 
-        // Load font
+        // Load font and unicode
         guard let unicode = SFSymbols.shared.unicode(for: name),
               let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
 
         // Create attributed string
-        let attrString = NSAttributedString(string: unicode, attributes: [
-            .font: font,
-            .foregroundColor: UIColor.black
-        ])
-
-        // Size based on font
+        let attrString = NSAttributedString(string: unicode, attributes: [.font: font, .foregroundColor: UIColor.black])
         let imageSize = attrString.size()
 
-        // Render image
+        // Render image normally
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
         attrString.draw(at: .zero)
-        let image = UIGraphicsGetImageFromCurrentImageContext()
+        guard let fullImage = UIGraphicsGetImageFromCurrentImageContext() else {
+            UIGraphicsEndImageContext()
+            return nil
+        }
         UIGraphicsEndImageContext()
 
-        guard let cgImage = image?.cgImage else { return nil }
-        self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
+        // Manually inset to remove typical SF Symbol padding
+        let insetAmount = fontSize * 0.1 // ~10% of font size, adjust if needed
+        let cropRect = CGRect(x: insetAmount,
+                              y: insetAmount,
+                              width: fullImage.size.width - 2 * insetAmount,
+                              height: fullImage.size.height - 2 * insetAmount)
+        
+        guard let cgCropped = fullImage.cgImage?.cropping(to: cropRect) else { return nil }
+        self.init(cgImage: cgCropped, scale: UIScreen.main.scale, orientation: .up)
     }
+
 
 }
