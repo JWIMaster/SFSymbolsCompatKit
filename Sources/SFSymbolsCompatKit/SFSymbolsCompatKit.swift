@@ -125,27 +125,27 @@ public extension UIImage {
             }
         }
 
-        // Compute bottom padding
-        let bottomPadding = tightBounds.minY
+        // Calculate original left padding
+        let originalSize = attrString.size()
+        let leftPadding = tightBounds.minX * 0.8
 
-        // Remove all padding and add bottom padding to all sides
+        // Remove all padding and add original left padding to each side
         let paddedRect = CGRect(
             x: 0,
             y: 0,
-            width: tightBounds.width + bottomPadding * 2,
-            height: tightBounds.height + bottomPadding * 2
+            width: tightBounds.width + leftPadding * 2,
+            height: tightBounds.height + leftPadding * 2
         )
 
         UIGraphicsBeginImageContextWithOptions(paddedRect.size, false, UIScreen.main.scale)
         guard let context = UIGraphicsGetCurrentContext() else { return nil }
 
-        // Fill red background
+        // Red background
         UIColor.red.setFill()
         context.fill(CGRect(origin: .zero, size: paddedRect.size))
 
         // Draw glyph, offset to account for removed padding
-        context.translateBy(x: -tightBounds.minX + bottomPadding,
-                            y: -tightBounds.minY + bottomPadding)
+        context.translateBy(x: -tightBounds.minX + leftPadding, y: -tightBounds.minY + leftPadding)
         CTLineDraw(line, context)
 
         let image = UIGraphicsGetImageFromCurrentImageContext()
