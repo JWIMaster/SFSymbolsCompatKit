@@ -118,8 +118,9 @@ public extension UIImage {
         let lineHeight = font.ascender - font.descender
         let imageSize = CGSize(width: symbolSize.width, height: lineHeight)
         
-        // offset to center symbol vertically in line height
-        let verticalOffset = (lineHeight - symbolSize.height) / 2
+        // Manual tweak factor — adjust this until visually centered
+        let tweakFactor: CGFloat = 0.08  // 8% of lineHeight, positive moves symbol down
+        let verticalOffset = (lineHeight - symbolSize.height) / 2 + lineHeight * tweakFactor
         
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
         attrString.draw(at: CGPoint(x: 0, y: verticalOffset))
@@ -129,5 +130,6 @@ public extension UIImage {
         guard let cgImage = image?.cgImage else { return nil }
         self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
     }
+
 
 }
