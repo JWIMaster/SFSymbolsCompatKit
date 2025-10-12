@@ -120,12 +120,13 @@ public extension UIImage {
         // Size based on font
         let imageSize = attrString.size()
 
-        // Refined vertical offset to align baseline better
-        let baselineOffset = abs(font.descender) * 0.35
+        // Precise vertical offset for perfect centering
+        let lineHeight = font.ascender - font.descender
+        let centerOffset = (lineHeight - font.capHeight) / 2 - font.descender
 
-        // Render image with baseline correction
+        // Render image with baseline-corrected centering
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
-        attrString.draw(at: CGPoint(x: 0, y: baselineOffset))
+        attrString.draw(at: CGPoint(x: 0, y: centerOffset))
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
