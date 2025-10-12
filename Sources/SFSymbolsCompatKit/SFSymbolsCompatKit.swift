@@ -99,8 +99,8 @@ public extension UIImage {
     convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
         let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
 
-        // Apply your 1.22 scaling and symbol scale
-        var fontSize = config.pointSize * 1.22
+        // Adjust font size according to scale
+        var fontSize = config.pointSize*1.22
         switch config.scale {
         case .small: fontSize *= 0.75
         case .medium: break
@@ -111,31 +111,33 @@ public extension UIImage {
         guard let unicode = SFSymbols.shared.unicode(for: name),
               let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
 
+        // Measure glyph metrics
+        let ctFont = CTFontCreateWithName(font.fontName as CFString, font.pointSize, nil)
+        let ascent = CTFontGetAscent(ctFont)
+        let descent = CTFontGetDescent(ctFont)
+        let lineHeight = CTFontGetLeading(ctFont) + ascent + descent
+
+        // Create square frame
+        let imageSize = CGSize(width: lineHeight, height: lineHeight)
+
+        // Create attributed string
         let attrString = NSAttributedString(string: unicode, attributes: [
             .font: font,
             .foregroundColor: UIColor.blue
         ])
 
-        // Compute exact frame using font metrics
-        let ascent = font.ascender
-        let descent = abs(font.descender)
-        let glyphHeight = ascent + descent
-        let imageWidth = ceil(attrString.size().width)
-        let imageHeight = ceil(glyphHeight)
-        let imageSize = CGSize(width: imageWidth, height: imageHeight)
-
-        // Keep your offset calculation exactly as before
-        let yOffset = (attrString.size().height - (ascent - font.descender)) / 2 - font.descender
-
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
-        attrString.draw(at: CGPoint(x: 0, y: yOffset))
+
+        // Compute vertical offset to center glyph
+        let yOffset = (imageSize.height - attrString.size().height) / 2
+        attrString.draw(at: CGPoint(x: (imageSize.width - attrString.size().width)/2, y: yOffset))
+
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
         guard let cgImage = image?.cgImage else { return nil }
         self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
     }
-
 
 
 }
