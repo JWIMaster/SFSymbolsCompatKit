@@ -96,8 +96,8 @@ public extension UIImage {
     typealias SymbolConfiguration = SymbolConfigurationA
 
     @available(iOS, introduced: 6.0, obsoleted: 13.0)
-    convenience init?(systemName name: String, withConfiguration config: UIImage.SymbolConfigurationA? = nil) {
-        let config = config ?? UIImage.SymbolConfigurationA() // default: 17pt, regular, medium
+    convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
+        let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
 
         // Adjust font size according to scale
         var fontSize = config.pointSize * 1.22
@@ -114,17 +114,17 @@ public extension UIImage {
         // Create attributed string
         let attrString = NSAttributedString(string: unicode, attributes: [
             .font: font,
-            .foregroundColor: UIColor.blue
+            .foregroundColor: UIColor.black
         ])
 
-        // Measure image size
-        let imageSize = attrString.size()
-
-        // Compute center offset to align symbol vertically with text
+        // Use full line height to avoid clipping
         let lineHeight = font.ascender - font.descender
-        let verticalOffset = (lineHeight - imageSize.height) / 2
+        let imageSize = CGSize(width: attrString.size().width, height: lineHeight)
 
-        // Render image with center alignment
+        // Vertical offset to center the symbol
+        let verticalOffset = (lineHeight - attrString.size().height) / 2
+
+        // Render image
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
         attrString.draw(at: CGPoint(x: 0, y: verticalOffset))
         let image = UIGraphicsGetImageFromCurrentImageContext()
