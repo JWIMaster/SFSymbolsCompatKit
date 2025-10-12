@@ -97,7 +97,7 @@ public extension UIImage {
 
     @available(iOS, introduced: 6.0, obsoleted: 13.0)
     convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
-        let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
+        let config = config ?? SymbolConfigurationA()
 
         // Adjust font size according to scale
         var fontSize = config.pointSize * 1.22
@@ -114,23 +114,20 @@ public extension UIImage {
         // Create attributed string
         let attrString = NSAttributedString(string: unicode, attributes: [
             .font: font,
-            .foregroundColor: UIColor.black // base mask colour for tinting
+            .foregroundColor: UIColor.black
         ])
 
-        // Render image
+        // Render symbol
         let imageSize = attrString.size()
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
         attrString.draw(at: .zero)
-        let baseImage = UIGraphicsGetImageFromCurrentImageContext()
+        let drawn = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
-        guard let cgImage = baseImage?.cgImage else { return nil }
+        guard let rendered = drawn?.withRenderingMode(.alwaysTemplate) else { return nil }
 
-        // Create UIImage
-        let rendered = UIImage(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
-            .withRenderingMode(.alwaysTemplate) // ✅ this is the critical point
-
-        self.init(cgImage: rendered.cgImage!, scale: rendered.scale, orientation: rendered.imageOrientation)
+        // ✅ Correct way: initialise from the template image itself
+        self.init(data: rendered.pngData()!)
     }
 
 
