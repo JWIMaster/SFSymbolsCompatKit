@@ -50,6 +50,7 @@ public class SFSymbols {
 // MARK: - UIImage Init Backport
 public extension UIImage {
     
+    @available(iOS, introduced: 6.0, obsoleted: 13.0)
     convenience init?(systemName name: String, weight: SymbolWeightA = .regular, pointSize: CGFloat = 30, color: UIColor = UIColor.black) {
         guard let unicode = SFSymbols.shared.unicode(for: name, weight: weight),
               let font = SFSymbols.shared.font(weight: weight, size: pointSize) else { return nil }
