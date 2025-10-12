@@ -30,7 +30,7 @@ public class SFSymbols {
     }
 
     private func loadLookupDat() {
-        let bundle = Bundle(for: SFSymbols.self)
+        let bundle = Bundle.module
         guard let url = bundle.url(forResource: "lookup", withExtension: "dat"),
               let data = try? Data(contentsOf: url) else {
             print("❌ Failed to load lookup.dat")
@@ -55,7 +55,7 @@ public class SFSymbols {
 
     private func registerFontIfNeeded(weight: SymbolWeightA) {
         guard !registeredFonts.contains(weight.rawValue) else { return }
-        let bundle = Bundle(for: SFSymbols.self)
+        let bundle = Bundle.module
         if let url = bundle.url(forResource: "SFSymbols-\(weight.rawValue)", withExtension: "ttf") {
             CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
             registeredFonts.insert(weight.rawValue)
