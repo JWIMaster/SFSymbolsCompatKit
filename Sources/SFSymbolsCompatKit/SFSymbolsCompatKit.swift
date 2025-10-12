@@ -191,10 +191,10 @@ public extension UIImage {
 
      UIGraphicsBeginImageContextWithOptions(paddedRect.size, false, UIScreen.main.scale)
      guard let context = UIGraphicsGetCurrentContext() else { return nil }
+ 
+     context.translateBy(x: 0, y: paddedRect.height)
+     context.scaleBy(x: 1, y: -1)
 
-     // Red background
-     UIColor.red.setFill()
-     context.fill(CGRect(origin: .zero, size: paddedRect.size))
 
      // Draw glyph, offset to account for removed padding
      context.translateBy(x: -tightBounds.minX + leftPadding, y: -tightBounds.minY + leftPadding)
