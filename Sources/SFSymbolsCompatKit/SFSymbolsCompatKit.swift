@@ -123,8 +123,8 @@ public extension UIImage {
         let imageSize = CGSize(width: symbolSize.width, height: lineHeight + padding)
         
         // Correct vertical offset: negative nudge moves symbol up visually (curved down effect)
-        let downwardNudge: CGFloat = fontSize * 0.08 // negative to move up
-        let verticalOffset = (imageSize.height - symbolSize.height) / 2 + downwardNudge
+        let downwardNudge: CGFloat = -fontSize * 0.08 // negative to move up
+        let verticalOffset = (imageSize.height - symbolSize.height) / 2 -2
         
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
         attrString.draw(at: CGPoint(x: 0, y: verticalOffset))
