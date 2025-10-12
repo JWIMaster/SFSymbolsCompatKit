@@ -100,14 +100,14 @@ public extension UIImage {
         let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
 
         // Adjust font size according to scale
-        var fontSize = config.pointSize*1.22
+        var fontSize = config.pointSize * 1.22
         switch config.scale {
         case .small: fontSize *= 0.75
         case .medium: break
         case .large: fontSize *= 1.25
         }
 
-        // Load font
+        // Load font and unicode
         guard let unicode = SFSymbols.shared.unicode(for: name),
               let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
 
@@ -117,17 +117,35 @@ public extension UIImage {
             .foregroundColor: UIColor.black
         ])
 
-        // Size based on font
-        let imageSize = attrString.size()
+        // Use CoreText to get exact glyph bounds
+        let line = CTLineCreateWithAttributedString(attrString)
+        let runs = CTLineGetGlyphRuns(line) as! [CTRun]
 
-        // Render image
+        var tightRect = CGRect.null
+        for run in runs {
+            let glyphCount = CTRunGetGlyphCount(run)
+            var glyphs = [CGGlyph](repeating: 0, count: glyphCount)
+            var positions = [CGPoint](repeating: .zero, count: glyphCount)
+            CTRunGetGlyphs(run, CFRange(location: 0, length: 0), &glyphs)
+            CTRunGetPositions(run, CFRange(location: 0, length: 0), &positions)
+
+            for i in 0..<glyphCount {
+                let bounds = CTRunGetImageBounds(run, nil, CFRange(location: i, length: 1))
+                let offsetBounds = bounds.offsetBy(dx: positions[i].x, dy: positions[i].y)
+                tightRect = tightRect.union(offsetBounds)
+            }
+        }
+
+        // Render the symbol in a tight box
+        let imageSize = tightRect.size
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
-        attrString.draw(at: .zero)
+        attrString.draw(at: CGPoint(x: -tightRect.origin.x, y: -tightRect.origin.y))
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
         guard let cgImage = image?.cgImage else { return nil }
         self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
     }
+
 
 }
