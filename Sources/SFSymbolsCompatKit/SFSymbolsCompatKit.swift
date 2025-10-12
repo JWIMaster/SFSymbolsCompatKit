@@ -30,7 +30,7 @@ public class SFSymbols {
     
     private func registerFonts() {
         for weight in availableWeights {
-            guard let url = Bundle.module.url(forResource: "SFSymbols-\(weight.rawValue)", withExtension: "ttf") else { continue }
+            guard let url = Bundle.main.url(forResource: "SFSymbols-\(weight.rawValue)", withExtension: "ttf") else { continue }
             CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
         }
     }
@@ -47,10 +47,10 @@ public class SFSymbols {
     }
 }
 
-// MARK: - UIImage Backport
+// MARK: - UIImage Init Backport
 public extension UIImage {
     
-    static func systemName(_ name: String, weight: SymbolWeightA = .regular, pointSize: CGFloat = 30, color: UIColor = UIColor.black) -> UIImage? {
+    convenience init?(systemName name: String, weight: SymbolWeightA = .regular, pointSize: CGFloat = 30, color: UIColor = UIColor.black) {
         guard let unicode = SFSymbols.shared.unicode(for: name, weight: weight),
               let font = SFSymbols.shared.font(weight: weight, size: pointSize) else { return nil }
         
@@ -64,7 +64,9 @@ public extension UIImage {
         attrString.draw(at: CGPoint.zero)
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
-        return image
+        
+        guard let cgImage = image?.cgImage else { return nil }
+        self.init(cgImage: cgImage)
     }
 }
 
@@ -80,7 +82,7 @@ public extension UILabel {
 // MARK: - UIButton Convenience
 public extension UIButton {
     func setSymbol(_ name: String, weight: SymbolWeightA = .regular, size: CGFloat = 30, color: UIColor = UIColor.black, forState state: UIControl.State = []) {
-        if let image = UIImage.systemName(name, weight: weight, pointSize: size, color: color) {
+        if let image = UIImage(systemName: name, weight: weight, pointSize: size, color: color) {
             self.setImage(image, for: state)
         }
     }
