@@ -122,8 +122,9 @@ public extension UIImage {
         let padding: CGFloat = fontSize * 0.3 // 30% extra space above and below
         let imageSize = CGSize(width: symbolSize.width, height: lineHeight + padding)
         
-        // Correct vertical offset to center symbol visually
-        let verticalOffset = (imageSize.height - symbolSize.height) / 2 + padding / 2
+        // Vertical offset with extra downward nudge for visual alignment
+        let downwardNudge: CGFloat = fontSize * 0.08 // tweak this per weight/scale
+        let verticalOffset = (imageSize.height - symbolSize.height) / 2 + downwardNudge
         
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
         attrString.draw(at: CGPoint(x: 0, y: verticalOffset))
