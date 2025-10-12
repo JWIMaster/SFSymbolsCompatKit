@@ -97,7 +97,7 @@ public extension UIImage {
     convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
         let config = config ?? SymbolConfigurationA()
 
-        var fontSize = config.pointSize*1.22
+        var fontSize = config.pointSize * 1.22
         switch config.scale {
         case .small: fontSize *= 0.75
         case .medium: break
@@ -105,21 +105,46 @@ public extension UIImage {
         }
 
         guard let unicode = SFSymbols.shared.unicode(for: name),
-              let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
+              let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else {
+            return nil
+        }
 
         let attrString = NSAttributedString(string: unicode, attributes: [
             .font: font,
             .foregroundColor: UIColor.black
         ])
-        let imageSize = attrString.size()
 
-        UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
-        attrString.draw(at: .zero)
+        // Measure the glyphs tightly using CoreText
+        let line = CTLineCreateWithAttributedString(attrString)
+        let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+
+        var tightBounds = CGRect.null
+        for run in runs {
+            let runCount = CTRunGetGlyphCount(run)
+            for i in 0..<runCount {
+                let glyphBounds = CTRunGetImageBounds(run, nil, CFRange(location: i, length: 1))
+                tightBounds = tightBounds.union(glyphBounds)
+            }
+        }
+
+        // Add a tiny inset to avoid clipping
+        let scale = UIScreen.main.scale
+        let inset: CGFloat = 1 / scale
+        tightBounds = tightBounds.insetBy(dx: -inset, dy: -inset)
+
+        UIGraphicsBeginImageContextWithOptions(tightBounds.size, false, scale)
+        guard let context = UIGraphicsGetCurrentContext() else { return nil }
+
+        // Translate so the glyph is drawn at (0, 0)
+        context.translateBy(x: -tightBounds.origin.x, y: -tightBounds.origin.y)
+        CTLineDraw(line, context)
+
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
         guard let cgImage = image?.cgImage else { return nil }
-        self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
+        self.init(cgImage: cgImage, scale: scale, orientation: .up)
     }
+
 
 }
