@@ -114,7 +114,6 @@ public extension UIImage {
             .foregroundColor: UIColor.black
         ])
 
-        // Measure the glyphs tightly using CoreText
         let line = CTLineCreateWithAttributedString(attrString)
         let runs = CTLineGetGlyphRuns(line) as! [CTRun]
 
@@ -127,15 +126,15 @@ public extension UIImage {
             }
         }
 
-        // Add a tiny inset to avoid clipping
+        // Add a small consistent padding for visual comfort
         let scale = UIScreen.main.scale
-        let inset: CGFloat = 1 / scale
+        let inset: CGFloat = 1.5 / scale // was 1 — slightly more padding now
         tightBounds = tightBounds.insetBy(dx: -inset, dy: -inset)
 
         UIGraphicsBeginImageContextWithOptions(tightBounds.size, false, scale)
         guard let context = UIGraphicsGetCurrentContext() else { return nil }
 
-        // Translate so the glyph is drawn at (0, 0)
+        // Shift so the glyph is drawn fully within the padded frame
         context.translateBy(x: -tightBounds.origin.x, y: -tightBounds.origin.y)
         CTLineDraw(line, context)
 
