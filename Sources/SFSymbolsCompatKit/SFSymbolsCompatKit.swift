@@ -95,28 +95,32 @@ public extension UIImage {
     
     typealias SymbolConfiguration = SymbolConfigurationA
 
-    /// Backport initializer for iOS 6–12
     @available(iOS, introduced: 6.0, obsoleted: 13.0)
     convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
         let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
 
-        guard let unicode = SFSymbols.shared.unicode(for: name),
-              let font = SFSymbols.shared.font(weight: config.weight, size: config.pointSize) else { return nil }
+        // Adjust font size according to scale
+        var fontSize = config.pointSize
+        switch config.scale {
+        case .small: fontSize *= 0.75
+        case .medium: break
+        case .large: fontSize *= 1.25
+        }
 
+        // Load font
+        guard let unicode = SFSymbols.shared.unicode(for: name),
+              let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
+
+        // Create attributed string
         let attrString = NSAttributedString(string: unicode, attributes: [
             .font: font,
             .foregroundColor: UIColor.blue
         ])
 
-        var imageSize = attrString.size()
+        // Size based on font
+        let imageSize = attrString.size()
 
-        // Apply scale
-        switch config.scale {
-        case .small: imageSize = CGSize(width: imageSize.width * 0.75, height: imageSize.height * 0.75)
-        case .medium: break
-        case .large: imageSize = CGSize(width: imageSize.width * 1.25, height: imageSize.height * 1.25)
-        }
-
+        // Render image
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
         attrString.draw(at: .zero)
         let image = UIGraphicsGetImageFromCurrentImageContext()
@@ -125,4 +129,5 @@ public extension UIImage {
         guard let cgImage = image?.cgImage else { return nil }
         self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
     }
+
 }
