@@ -97,7 +97,7 @@ public extension UIImage {
     convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
         let config = config ?? SymbolConfigurationA()
 
-        var fontSize = config.pointSize*1.22
+        var fontSize = config.pointSize * 1.22
         switch config.scale {
         case .small: fontSize *= 0.75
         case .medium: break
@@ -111,15 +111,26 @@ public extension UIImage {
             .font: font,
             .foregroundColor: UIColor.black
         ])
+
         let imageSize = attrString.size()
 
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
+        guard let context = UIGraphicsGetCurrentContext() else { return nil }
+
+        // Fill background with red
+        UIColor.red.setFill()
+        context.fill(CGRect(origin: .zero, size: imageSize))
+
+        // Draw the symbol glyph on top
         attrString.draw(at: .zero)
+
+        // Capture image
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
         guard let cgImage = image?.cgImage else { return nil }
         self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
     }
+
 
 }
