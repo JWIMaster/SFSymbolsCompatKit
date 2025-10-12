@@ -27,7 +27,6 @@ public class SFSymbols {
         return h
     }
 
-    // MARK: - Load binary lookup table safely
     private func loadLookupDat() {
         let bundle = Bundle(for: SFSymbols.self)
         guard let url = bundle.url(forResource: "lookup", withExtension: "dat"),
@@ -38,23 +37,23 @@ public class SFSymbols {
 
         var cursor = 0
         while cursor + 6 <= data.count {
-            // Use copyBytes to avoid misaligned load crashes
-            let hash: UInt32 = data[cursor..<(cursor+4)].withUnsafeBytes { buffer in
-                var value: UInt32 = 0
-                _ = buffer.copyBytes(to: &value, count: 4)
-                return UInt32(littleEndian: value)
-            }
-            let code: UInt16 = data[(cursor+4)..<(cursor+6)].withUnsafeBytes { buffer in
-                var value: UInt16 = 0
-                _ = buffer.copyBytes(to: &value, count: 2)
-                return UInt16(littleEndian: value)
-            }
+            // Read 4 bytes for UInt32 hash (little-endian)
+            let hash = UInt32(data[cursor]) |
+                       UInt32(data[cursor + 1]) << 8 |
+                       UInt32(data[cursor + 2]) << 16 |
+                       UInt32(data[cursor + 3]) << 24
+
+            // Read 2 bytes for UInt16 code (little-endian)
+            let code = UInt16(data[cursor + 4]) |
+                       UInt16(data[cursor + 5]) << 8
+
             lookup[hash] = code
             cursor += 6
         }
 
         print("✅ Loaded \(lookup.count) symbols from lookup.dat")
     }
+
 
     // MARK: - Lazy font registration
     private func registerFontIfNeeded(weight: SymbolWeightA) {
