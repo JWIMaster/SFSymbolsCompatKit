@@ -117,14 +117,16 @@ public extension UIImage {
             .foregroundColor: UIColor.blue
         ])
 
-        // Size based on font
+        // Measure image size
         let imageSize = attrString.size()
 
-        // Offset so the font baseline aligns with the image baseline
-        let baselineOffset = font.ascender - font.capHeight
+        // Compute center offset to align symbol vertically with text
+        let lineHeight = font.ascender - font.descender
+        let verticalOffset = (lineHeight - imageSize.height) / 2
 
+        // Render image with center alignment
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
-        attrString.draw(at: CGPoint(x: 0, y: baselineOffset))
+        attrString.draw(at: CGPoint(x: 0, y: verticalOffset))
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
