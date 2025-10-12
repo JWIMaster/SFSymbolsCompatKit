@@ -16,20 +16,7 @@ let package = Package(
     targets: [
         .target(
             name: "SFSymbolsCompatKit",
-            dependencies: [],
-            resources: [
-                // Manually include every resource file
-                .copy("Assets/lookup.dat"),
-                .copy("Assets/SFSymbols-ultralight.ttf"),
-                .copy("Assets/SFSymbols-thin.ttf"),
-                .copy("Assets/SFSymbols-light.ttf"),
-                .copy("Assets/SFSymbols-regular.ttf"),
-                .copy("Assets/SFSymbols-medium.ttf"),
-                .copy("Assets/SFSymbols-semibold.ttf"),
-                .copy("Assets/SFSymbols-bold.ttf"),
-                .copy("Assets/SFSymbols-heavy.ttf"),
-                .copy("Assets/SFSymbols-black.ttf")
-            ]
+            dependencies: []
         ),
         .testTarget(
             name: "SFSymbolsCompatKitTests",
