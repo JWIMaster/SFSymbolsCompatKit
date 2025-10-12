@@ -9,76 +9,85 @@ public enum SymbolWeightA: String {
 // MARK: - SFSymbols Manager
 public class SFSymbols {
     public static let shared = SFSymbols()
-
-    private var lookup: [String: [String: String]] = [:]
-    private var registeredFonts: Set<String> = []
-    private var imageCache: [String: UIImage] = [:]
-
+    
+    // weight -> symbolName -> unicode
+    public var lookup: [String: [String: String]] = [:]
+    private let availableWeights: [SymbolWeightA] = [.ultralight, .thin, .light, .regular, .medium, .semibold, .bold, .heavy, .black]
+    
     private init() {
         loadLookup()
+        registerFonts()
     }
-
-    // MARK: Load glyph lookup JSON
+    
+    // MARK: Load glyph lookup JSON from module bundle
     private func loadLookup() {
+        // Use the bundle of this class as the module bundle
         let bundle = Bundle(for: SFSymbols.self)
+        
         guard let url = bundle.url(forResource: "glyph_lookup", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: [String: String]] else {
             print("Failed to load glyph lookup")
             return
         }
+        
         lookup = json
     }
-
-    // MARK: Lazy font registration
-    private func registerFontIfNeeded(weight: SymbolWeightA) {
-        guard !registeredFonts.contains(weight.rawValue) else { return }
+    
+    // MARK: Register custom fonts
+    private func registerFonts() {
         let bundle = Bundle(for: SFSymbols.self)
-        if let url = bundle.url(forResource: "SFSymbols-\(weight.rawValue)", withExtension: "ttf") {
+        
+        for weight in availableWeights {
+            guard let url = bundle.url(forResource: "SFSymbols-\(weight.rawValue)", withExtension: "ttf") else { continue }
             CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
-            registeredFonts.insert(weight.rawValue)
         }
     }
-
-    // MARK: UIFont for weight
+    
+    // MARK: Return UIFont for weight
     public func font(weight: SymbolWeightA, size: CGFloat) -> UIFont? {
-        registerFontIfNeeded(weight: weight)
         return UIFont(name: "SFSymbols-\(weight.rawValue)", size: size)
     }
-
-    // MARK: Unicode for symbol name
+    
+    // MARK: Return Unicode character for symbol name
     public func unicode(for name: String, weight: SymbolWeightA = .regular) -> String? {
-        return lookup[weight.rawValue]?[name].flatMap { UInt32($0, radix: 16) }.flatMap { UnicodeScalar($0) }.map { String($0) }
+        guard let hex = lookup[weight.rawValue]?[name],
+              let codePoint = UInt32(hex, radix: 16),
+              let scalar = UnicodeScalar(codePoint) else { return nil }
+        return String(scalar)
     }
+}
 
-    // MARK: UIImage for symbol
-    public func image(for name: String, weight: SymbolWeightA = .regular, size: CGFloat = 30, color: UIColor = .black) -> UIImage? {
-        let cacheKey = "\(name)-\(weight.rawValue)-\(size)-\(color.description)"
-        if let cached = imageCache[cacheKey] { return cached }
-
-        guard let unicode = unicode(for: name, weight: weight),
-              let font = font(weight: weight, size: size) else { return nil }
-
+// MARK: - UIImage Init Backport
+public extension UIImage {
+    @available(iOS, introduced: 6.0, obsoleted: 13.0)
+    convenience init?(systemName name: String, weight: SymbolWeightA = .regular, pointSize: CGFloat = 30, color: UIColor = .black) {
+        
+        guard let unicode = SFSymbols.shared.unicode(for: name, weight: weight),
+              let font = SFSymbols.shared.font(weight: weight, size: pointSize) else { return nil }
+        
+        // Use iOS 6 compatible NSAttributedString keys
         let attrString = NSAttributedString(string: unicode, attributes: [
             NSAttributedString.Key.font: font,
             NSAttributedString.Key.foregroundColor: color
         ])
-
-        var imageSize = attrString.size()
-        if imageSize.width < 1 { imageSize.width = 1 }
-        if imageSize.height < 1 { imageSize.height = 1 }
-
-        UIGraphicsBeginImageContextWithOptions(imageSize, false, 1.0)
+        
+        // Ensure minimum size
+        var size = attrString.size()
+        if size.width < 1 { size.width = 1 }
+        if size.height < 1 { size.height = 1 }
+        
+        UIGraphicsBeginImageContextWithOptions(size, false, 1.0) // scale 1.0 for iOS 6
         attrString.draw(at: CGPoint.zero)
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
-
-        if let img = image { imageCache[cacheKey] = img }
-        return image
+        
+        guard let cgImage = image?.cgImage else { return nil }
+        self.init(cgImage: cgImage, scale: 1.0, orientation: .up)
     }
 }
 
-// MARK: - UILabel helper
+// MARK: - UILabel Convenience
 public extension UILabel {
     func setSymbol(_ name: String, weight: SymbolWeightA = .regular, size: CGFloat = 30, color: UIColor = .black) {
         self.font = SFSymbols.shared.font(weight: weight, size: size)
@@ -87,11 +96,11 @@ public extension UILabel {
     }
 }
 
-// MARK: - UIButton helper
+// MARK: - UIButton Convenience
 public extension UIButton {
     func setSymbol(_ name: String, weight: SymbolWeightA = .regular, size: CGFloat = 30, color: UIColor = .black, forState state: UIControl.State = .normal) {
-        if let img = SFSymbols.shared.image(for: name, weight: weight, size: size, color: color) {
-            self.setImage(img, for: state)
+        if let image = UIImage(systemName: name, weight: weight, pointSize: size, color: color) {
+            self.setImage(image, for: state)
         }
     }
 }
