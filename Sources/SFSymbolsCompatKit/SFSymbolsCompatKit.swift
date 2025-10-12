@@ -117,14 +117,16 @@ public extension UIImage {
         
         let symbolSize = attrString.size()
         
-        // generous height to prevent clipping
+        // Compute line height and extra padding
         let lineHeight = font.ascender - font.descender
-        let padding: CGFloat = fontSize * 0.3 // extra space above and below
-        let imageSize = CGSize(width: symbolSize.width, height: lineHeight + padding)
+        let extraPadding: CGFloat = fontSize * 0.5 // 50% of font size for safety
         
-        // Correct vertical offset: negative nudge moves symbol up visually (curved down effect)
-        let downwardNudge: CGFloat = -fontSize * 0.08 // negative to move up
-        let verticalOffset = ((imageSize.height - symbolSize.height) / 2) + 10
+        // Image height includes line height + padding + manual downward nudge
+        let downwardNudge: CGFloat = 10 // adjust visually
+        let imageSize = CGSize(width: symbolSize.width, height: lineHeight + extraPadding + abs(downwardNudge))
+        
+        // Center symbol vertically and apply downward nudge
+        let verticalOffset = ((imageSize.height - symbolSize.height) / 2) + downwardNudge
         
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
         attrString.draw(at: CGPoint(x: 0, y: verticalOffset))
