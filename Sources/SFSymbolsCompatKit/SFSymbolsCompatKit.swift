@@ -97,7 +97,7 @@ public extension UIImage {
     convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
         let config = config ?? SymbolConfigurationA()
 
-        var fontSize = config.pointSize
+        var fontSize = config.pointSize*1.22
         switch config.scale {
         case .small: fontSize *= 0.75
         case .medium: break
