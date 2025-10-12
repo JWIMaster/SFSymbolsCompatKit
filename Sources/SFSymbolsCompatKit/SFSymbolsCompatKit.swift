@@ -125,7 +125,7 @@ public extension UIImage {
         UIGraphicsEndImageContext()
 
         // Manually inset to remove typical SF Symbol padding
-        let insetAmount = fontSize * 0.1 // ~10% of font size, adjust if needed
+        let insetAmount = fontSize * 0.01 // ~10% of font size, adjust if needed
         let cropRect = CGRect(x: insetAmount,
                               y: insetAmount,
                               width: fullImage.size.width - 2 * insetAmount,
