@@ -111,7 +111,6 @@ public extension UIImage {
             .font: font,
             .foregroundColor: UIColor.black
         ])
-
         let imageSize = attrString.size()
 
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
@@ -121,15 +120,19 @@ public extension UIImage {
         UIColor.red.setFill()
         context.fill(CGRect(origin: .zero, size: imageSize))
 
-        // Draw the symbol glyph on top
+        // Draw the glyph
         attrString.draw(at: .zero)
-
-        // Capture image
-        let image = UIGraphicsGetImageFromCurrentImageContext()
+        var image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
         guard let cgImage = image?.cgImage else { return nil }
-        self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
+
+        // Crop half of the right-side padding
+        let chopAmount: CGFloat = imageSize.width * 0.05 // adjust percentage as needed
+        let croppedRect = CGRect(x: 0, y: 0, width: imageSize.width - chopAmount, height: imageSize.height)
+        guard let croppedCG = cgImage.cropping(to: croppedRect) else { return nil }
+
+        self.init(cgImage: croppedCG, scale: UIScreen.main.scale, orientation: .up)
     }
 
 
