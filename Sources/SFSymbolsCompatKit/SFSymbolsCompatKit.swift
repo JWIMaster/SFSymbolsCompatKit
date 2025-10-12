@@ -139,7 +139,9 @@ public extension UIImage {
 
         UIGraphicsBeginImageContextWithOptions(paddedRect.size, false, UIScreen.main.scale)
         guard let context = UIGraphicsGetCurrentContext() else { return nil }
-
+        
+        context.scaleBy(x: 1, y: -1)
+        
         // Red background
         UIColor.red.setFill()
         context.fill(CGRect(origin: .zero, size: paddedRect.size))
