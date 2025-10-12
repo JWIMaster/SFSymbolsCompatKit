@@ -110,30 +110,24 @@ public extension UIImage {
         guard let unicode = SFSymbols.shared.unicode(for: name),
               let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
 
-        let ctFont = CTFontCreateWithName(font.fontName as CFString, font.pointSize, nil)
-
-        // Get font metrics
-        let ascent = CTFontGetAscent(ctFont)
-        let descent = CTFontGetDescent(ctFont)
-        let lineHeight = ascent + descent
-
-        // Make square canvas based on lineHeight
-        let size = lineHeight * 1.1 // 10% buffer to avoid clipping
-        let imageSize = CGSize(width: size, height: size)
-
-        // Compute baseline offset to centre glyph
-        let baselineOffset = (imageSize.height - lineHeight)/2 + descent
-
         // Create attributed string
         let attrString = NSAttributedString(string: unicode, attributes: [
             .font: font,
             .foregroundColor: UIColor.blue
         ])
 
+        // Square canvas: take max(width, height) + small buffer
+        let glyphSize = attrString.size()
+        let buffer: CGFloat = 2
+        let canvasSize = max(glyphSize.width, glyphSize.height) + buffer * 2
+        let imageSize = CGSize(width: canvasSize, height: canvasSize)
+
+        // Compute offsets to centre glyph
+        let xOffset = (imageSize.width - glyphSize.width)/2
+        let yOffset = (imageSize.height - glyphSize.height)/2
+
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
-        // Draw at x-centred, y-adjusted to baseline
-        let x = (imageSize.width - attrString.size().width)/2
-        attrString.draw(at: CGPoint(x: x, y: baselineOffset - ascent))
+        attrString.draw(at: CGPoint(x: xOffset, y: yOffset))
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
