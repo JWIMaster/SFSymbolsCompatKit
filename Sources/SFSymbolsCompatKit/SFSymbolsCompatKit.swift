@@ -115,12 +115,15 @@ public extension UIImage {
         ])
         
         let symbolSize = attrString.size()
-        let lineHeight = font.ascender - font.descender
-        let imageSize = CGSize(width: symbolSize.width, height: lineHeight)
         
-        // Manual tweak factor — adjust this until visually centered
-        let tweakFactor: CGFloat = 0.08  // 8% of lineHeight, positive moves symbol down
-        let verticalOffset = (lineHeight - symbolSize.height) / 2 + lineHeight * tweakFactor
+        // Use a generous image height to avoid clipping
+        let lineHeight = font.ascender - font.descender
+        let extraPadding: CGFloat = fontSize * 0.2 // 20% extra space above and below
+        let imageSize = CGSize(width: symbolSize.width, height: lineHeight + extraPadding)
+        
+        // Compute vertical offset to roughly center the symbol
+        // You can tweak this factor per font weight if needed
+        let verticalOffset = (imageSize.height - symbolSize.height) / 2 - (extraPadding / 2)
         
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
         attrString.draw(at: CGPoint(x: 0, y: verticalOffset))
