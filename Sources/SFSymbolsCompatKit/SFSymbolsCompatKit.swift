@@ -21,7 +21,7 @@ public class SFSymbols {
     private func loadLookup() {
         guard let url = Bundle.main.url(forResource: "glyph_lookup", withExtension: "json"),
               let data = try? Data(contentsOf: url),
-              let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: [String: String]] else {
+              let json = try? NSJSONSerialization.JSONObjectWithData(data, options: []) as? [String: [String: String]] else {
             print("Failed to load glyph lookup")
             return
         }
@@ -30,8 +30,8 @@ public class SFSymbols {
     
     private func registerFonts() {
         for weight in availableWeights {
-            guard let url = Bundle.main.url(forResource: "SFSymbols-\(weight.rawValue)", withExtension: "ttf") else { continue }
-            CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+            guard let url = NSBundle.mainBundle().URLForResource("SFSymbols-\(weight.rawValue)", withExtension: "ttf") else { continue }
+            CTFontManagerRegisterFontsForURL(url, .Process, nil)
         }
     }
     
@@ -52,39 +52,26 @@ public extension UIImage {
     
     @available(iOS, introduced: 6.0, obsoleted: 13.0)
     convenience init?(systemName name: String, weight: SymbolWeightA = .regular, pointSize: CGFloat = 30, color: UIColor = UIColor.black) {
+        
         guard let unicode = SFSymbols.shared.unicode(for: name, weight: weight),
               let font = SFSymbols.shared.font(weight: weight, size: pointSize) else { return nil }
         
+        // Draw the symbol safely
         let attrString = NSAttributedString(string: unicode, attributes: [
-            NSAttributedString.Key.font: font,
-            NSAttributedString.Key.foregroundColor: color
+            NSFontAttributeName: font,
+            NSForegroundColorAttributeName: color
         ])
         
-        let size = attrString.size()
-        UIGraphicsBeginImageContextWithOptions(size, false, 0)
-        attrString.draw(at: CGPoint.zero)
+        var size = attrString.size()
+        if size.width < 1 { size.width = 1 }
+        if size.height < 1 { size.height = 1 }
+        
+        UIGraphicsBeginImageContextWithOptions(size, false, 1.0) // fixed scale for iOS 6
+        attrString.drawAtPoint(CGPointZero)
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         
-        guard let cgImage = image?.cgImage else { return nil }
-        self.init(cgImage: cgImage)
-    }
-}
-
-// MARK: - UILabel Convenience
-public extension UILabel {
-    func setSymbol(_ name: String, weight: SymbolWeightA = .regular, size: CGFloat = 30, color: UIColor = UIColor.black) {
-        self.font = SFSymbols.shared.font(weight: weight, size: size)
-        self.textColor = color
-        self.text = SFSymbols.shared.unicode(for: name, weight: weight)
-    }
-}
-
-// MARK: - UIButton Convenience
-public extension UIButton {
-    func setSymbol(_ name: String, weight: SymbolWeightA = .regular, size: CGFloat = 30, color: UIColor = UIColor.black, forState state: UIControl.State = []) {
-        if let image = UIImage(systemName: name, weight: weight, pointSize: size, color: color) {
-            self.setImage(image, for: state)
-        }
+        guard let cgImage = image?.CGImage else { return nil }
+        self.init(CGImage: cgImage)
     }
 }
