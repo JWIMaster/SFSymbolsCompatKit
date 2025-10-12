@@ -126,15 +126,19 @@ public extension UIImage {
             }
         }
 
-        // Add a small consistent padding for visual comfort
+        // Slight padding to prevent clipping
         let scale = UIScreen.main.scale
-        let inset: CGFloat = 1.5 / scale // was 1 — slightly more padding now
+        let inset: CGFloat = 1.5 / scale
         tightBounds = tightBounds.insetBy(dx: -inset, dy: -inset)
 
         UIGraphicsBeginImageContextWithOptions(tightBounds.size, false, scale)
         guard let context = UIGraphicsGetCurrentContext() else { return nil }
 
-        // Shift so the glyph is drawn fully within the padded frame
+        // Fill the background with red
+        UIColor.red.setFill()
+        context.fill(CGRect(origin: .zero, size: tightBounds.size))
+
+        // Translate to draw the glyph properly
         context.translateBy(x: -tightBounds.origin.x, y: -tightBounds.origin.y)
         CTLineDraw(line, context)
 
