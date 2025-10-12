@@ -33,7 +33,6 @@ public class SFSymbols {
         let bundle = Bundle.module
         guard let url = bundle.url(forResource: "lookup", withExtension: "dat"),
               let data = try? Data(contentsOf: url) else {
-            print("❌ Failed to load lookup.dat")
             return
         }
 
@@ -50,7 +49,6 @@ public class SFSymbols {
             lookup[hash] = code
             cursor += 6
         }
-        print("✅ Loaded \(lookup.count) symbols")
     }
 
     private func registerFontIfNeeded(weight: SymbolWeightA) {
@@ -97,30 +95,24 @@ public extension UIImage {
 
     @available(iOS, introduced: 6.0, obsoleted: 13.0)
     convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
-        let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
+        let config = config ?? SymbolConfigurationA()
 
-        // Adjust font size according to scale
-        var fontSize = config.pointSize*1.22
+        var fontSize = config.pointSize
         switch config.scale {
         case .small: fontSize *= 0.75
         case .medium: break
         case .large: fontSize *= 1.25
         }
 
-        // Load font
         guard let unicode = SFSymbols.shared.unicode(for: name),
               let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
 
-        // Create attributed string
         let attrString = NSAttributedString(string: unicode, attributes: [
             .font: font,
             .foregroundColor: UIColor.black
         ])
-
-        // Size based on font
         let imageSize = attrString.size()
 
-        // Render image
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
         attrString.draw(at: .zero)
         let image = UIGraphicsGetImageFromCurrentImageContext()
@@ -128,7 +120,6 @@ public extension UIImage {
 
         guard let cgImage = image?.cgImage else { return nil }
         self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
-        self.withRenderingMode(.alwaysTemplate)
     }
 
 }
