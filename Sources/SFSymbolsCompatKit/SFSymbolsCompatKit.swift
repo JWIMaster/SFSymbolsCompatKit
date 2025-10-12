@@ -145,8 +145,8 @@ public extension UIImage {
 
         
         // Red background
-        UIColor.red.setFill()
-        context.fill(CGRect(origin: .zero, size: paddedRect.size))
+        //UIColor.red.setFill()
+        //context.fill(CGRect(origin: .zero, size: paddedRect.size))
 
         // Draw glyph, offset to account for removed padding
         context.translateBy(x: -tightBounds.minX + leftPadding, y: -tightBounds.minY + leftPadding)
