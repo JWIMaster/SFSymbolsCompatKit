@@ -117,16 +117,19 @@ public extension UIImage {
             .foregroundColor: UIColor.blue
         ])
 
-        // Compute glyph metrics to avoid clipping
+        // Compute glyph metrics
         let ascent = font.ascender
         let descent = abs(font.descender)
         let glyphHeight = ascent + descent
         let imageWidth = ceil(attrString.size().width)
-        let imageHeight = ceil(glyphHeight)
+
+        // Add extra vertical padding to match SF Symbols line metrics
+        let verticalPadding = fontSize * 0.1 // ~10% of font size, tweak if needed
+        let imageHeight = ceil(glyphHeight + verticalPadding * 2)
         let imageSize = CGSize(width: imageWidth, height: imageHeight)
 
         // Compute vertical offset for perfect centering
-        let yOffset = (imageHeight - glyphHeight) / 2 + descent
+        let yOffset = verticalPadding + descent + (imageHeight - glyphHeight - verticalPadding * 2) / 2 - descent
 
         // Render image
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
