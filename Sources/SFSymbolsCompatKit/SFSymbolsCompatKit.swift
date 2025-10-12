@@ -122,7 +122,7 @@ public extension UIImage {
 
         // Render image
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
-        attrString.draw(at: .init(x: 0, y: -8))
+        attrString.draw(at: .init(x: 0, y: 8))
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
