@@ -100,7 +100,7 @@ public extension UIImage {
         let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
 
         // Adjust font size according to scale
-        var fontSize = config.pointSize
+        var fontSize = config.pointSize*1.22
         switch config.scale {
         case .small: fontSize *= 0.75
         case .medium: break
