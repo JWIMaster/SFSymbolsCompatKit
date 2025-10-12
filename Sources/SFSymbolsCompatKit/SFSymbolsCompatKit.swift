@@ -10,45 +10,28 @@ public enum SymbolWeightA: String {
 public class SFSymbols {
     public static let shared = SFSymbols()
     
-    private var lookup: [UInt32: UInt16] = [:] // hash -> unicode
+    public var lookup: [String: String] = [:] // now only 1 dictionary
+    
     private let availableWeights: [SymbolWeightA] = [.ultralight, .thin, .light, .regular, .medium, .semibold, .bold, .heavy, .black]
     private var registeredFonts: Set<String> = []
 
     private init() {
-        loadLookupDat()
+        loadLookup()
     }
     
-    // MARK: - FNV-1a Hash (must match Python)
-    private func fnv1aHash(_ s: String) -> UInt32 {
-        var h: UInt32 = 0x811C9DC5
-        for byte in s.utf8 {
-            h ^= UInt32(byte)
-            h = (h &* 0x01000193) & 0xFFFFFFFF
-        }
-        return h
-    }
-
-    // MARK: - Load binary lookup table
-    private func loadLookupDat() {
+    // Load cleaned JSON
+    private func loadLookup() {
         let bundle = Bundle(for: SFSymbols.self)
-        guard let url = bundle.url(forResource: "lookup", withExtension: "dat"),
-              let data = try? Data(contentsOf: url) else {
-            print("❌ Failed to load lookup.dat")
+        guard let url = bundle.url(forResource: "glyph_lookup_clean", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: String] else {
+            print("Failed to load glyph lookup")
             return
         }
-
-        var cursor = data.startIndex
-        while cursor + 6 <= data.endIndex {
-            let hash = data[cursor..<(cursor+4)].withUnsafeBytes { $0.load(as: UInt32.self) }
-            let code = data[(cursor+4)..<(cursor+6)].withUnsafeBytes { $0.load(as: UInt16.self) }
-            lookup[hash] = code
-            cursor += 6
-        }
-
-        print("✅ Loaded \(lookup.count) symbols from lookup.dat")
+        lookup = json
     }
 
-    // MARK: - Lazy font registration
+    // Lazy register font
     private func registerFontIfNeeded(weight: SymbolWeightA) {
         guard !registeredFonts.contains(weight.rawValue) else { return }
         let bundle = Bundle(for: SFSymbols.self)
@@ -58,17 +41,17 @@ public class SFSymbols {
         }
     }
     
-    // MARK: - UIFont for weight
+    // UIFont for weight
     public func font(weight: SymbolWeightA, size: CGFloat) -> UIFont? {
         registerFontIfNeeded(weight: weight)
         return UIFont(name: "SFSymbols-\(weight.rawValue)", size: size)
     }
-
-    // MARK: - Unicode lookup via hash
+    
+    // Unicode for symbol name
     public func unicode(for name: String) -> String? {
-        let hash = fnv1aHash(name)
-        guard let code = lookup[hash],
-              let scalar = UnicodeScalar(UInt32(code)) else { return nil }
+        guard let hex = lookup[name],
+              let codePoint = UInt32(hex, radix: 16),
+              let scalar = UnicodeScalar(codePoint) else { return nil }
         return String(scalar)
     }
 }
@@ -83,8 +66,8 @@ public extension UIImage {
         }
         
         let attrString = NSAttributedString(string: unicode, attributes: [
-            .font: font,
-            .foregroundColor: color
+            NSAttributedString.Key.font: font,
+            NSAttributedString.Key.foregroundColor: color
         ])
         
         var size = attrString.size()
