@@ -118,7 +118,7 @@ public extension UIImage {
         ])
 
         // Size based on font
-        let imageSize = attrString.size()
+        let imageSize = CGSize(width: attrString.size().width, height: attrString.size().height + 4)
 
         // Render image
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
