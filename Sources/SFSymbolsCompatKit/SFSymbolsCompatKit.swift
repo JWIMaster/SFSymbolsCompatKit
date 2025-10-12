@@ -10,28 +10,53 @@ public enum SymbolWeightA: String {
 public class SFSymbols {
     public static let shared = SFSymbols()
     
-    public var lookup: [String: String] = [:] // now only 1 dictionary
-    
-    private let availableWeights: [SymbolWeightA] = [.ultralight, .thin, .light, .regular, .medium, .semibold, .bold, .heavy, .black]
+    private var lookup: [UInt32: UInt16] = [:] // hash -> unicode
     private var registeredFonts: Set<String> = []
 
     private init() {
-        loadLookup()
+        loadLookupDat()
     }
     
-    // Load cleaned JSON
-    private func loadLookup() {
-        let bundle = Bundle(for: SFSymbols.self)
-        guard let url = bundle.url(forResource: "glyph_lookup_clean", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: String] else {
-            print("Failed to load glyph lookup")
-            return
+    // MARK: - FNV-1a Hash
+    private func fnv1aHash(_ s: String) -> UInt32 {
+        var h: UInt32 = 0x811C9DC5
+        for byte in s.utf8 {
+            h ^= UInt32(byte)
+            h = (h &* 0x01000193) & 0xFFFFFFFF
         }
-        lookup = json
+        return h
     }
 
-    // Lazy register font
+    // MARK: - Load binary lookup table safely
+    private func loadLookupDat() {
+        let bundle = Bundle(for: SFSymbols.self)
+        guard let url = bundle.url(forResource: "lookup", withExtension: "dat"),
+              let data = try? Data(contentsOf: url) else {
+            print("❌ Failed to load lookup.dat")
+            return
+        }
+
+        var cursor = 0
+        while cursor + 6 <= data.count {
+            // Use copyBytes to avoid misaligned load crashes
+            let hash: UInt32 = data[cursor..<(cursor+4)].withUnsafeBytes { buffer in
+                var value: UInt32 = 0
+                _ = buffer.copyBytes(to: &value, count: 4)
+                return UInt32(littleEndian: value)
+            }
+            let code: UInt16 = data[(cursor+4)..<(cursor+6)].withUnsafeBytes { buffer in
+                var value: UInt16 = 0
+                _ = buffer.copyBytes(to: &value, count: 2)
+                return UInt16(littleEndian: value)
+            }
+            lookup[hash] = code
+            cursor += 6
+        }
+
+        print("✅ Loaded \(lookup.count) symbols from lookup.dat")
+    }
+
+    // MARK: - Lazy font registration
     private func registerFontIfNeeded(weight: SymbolWeightA) {
         guard !registeredFonts.contains(weight.rawValue) else { return }
         let bundle = Bundle(for: SFSymbols.self)
@@ -41,17 +66,17 @@ public class SFSymbols {
         }
     }
     
-    // UIFont for weight
+    // MARK: - UIFont for weight
     public func font(weight: SymbolWeightA, size: CGFloat) -> UIFont? {
         registerFontIfNeeded(weight: weight)
         return UIFont(name: "SFSymbols-\(weight.rawValue)", size: size)
     }
-    
-    // Unicode for symbol name
+
+    // MARK: - Unicode lookup
     public func unicode(for name: String) -> String? {
-        guard let hex = lookup[name],
-              let codePoint = UInt32(hex, radix: 16),
-              let scalar = UnicodeScalar(codePoint) else { return nil }
+        let hash = fnv1aHash(name)
+        guard let code = lookup[hash],
+              let scalar = UnicodeScalar(UInt32(code)) else { return nil }
         return String(scalar)
     }
 }
@@ -61,26 +86,21 @@ public extension UIImage {
     @available(iOS, introduced: 6.0, obsoleted: 13.0)
     convenience init?(systemName name: String, weight: SymbolWeightA = .regular, pointSize: CGFloat = 30, color: UIColor = .black) {
         guard let unicode = SFSymbols.shared.unicode(for: name),
-              let font = SFSymbols.shared.font(weight: weight, size: pointSize) else {
-            return nil
-        }
-        
+              let font = SFSymbols.shared.font(weight: weight, size: pointSize) else { return nil }
+
         let attrString = NSAttributedString(string: unicode, attributes: [
-            NSAttributedString.Key.font: font,
-            NSAttributedString.Key.foregroundColor: color
+            .font: font,
+            .foregroundColor: color
         ])
-        
-        var size = attrString.size()
-        if size.width < 1 { size.width = 1 }
-        if size.height < 1 { size.height = 1 }
-        
-        UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
-        attrString.draw(at: CGPoint.zero)
+
+        let size = attrString.size()
+        UIGraphicsBeginImageContextWithOptions(size, false, 0) // Use device scale
+        attrString.draw(at: .zero)
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         
         guard let cgImage = image?.cgImage else { return nil }
-        self.init(cgImage: cgImage, scale: 1.0, orientation: .up)
+        self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
     }
 }
 
