@@ -96,61 +96,41 @@ public extension UIImage {
     typealias SymbolConfiguration = SymbolConfigurationA
 
     @available(iOS, introduced: 6.0, obsoleted: 13.0)
-    convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
-        let config = config ?? SymbolConfigurationA()
+        convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
+            let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
 
-        // Adjust font size according to scale
-        var fontSize = config.pointSize * 1.22
-        switch config.scale {
-        case .small: fontSize *= 0.75
-        case .medium: break
-        case .large: fontSize *= 1.25
+            // Adjust font size according to scale
+            var fontSize = config.pointSize * 1.22
+            switch config.scale {
+            case .small: fontSize *= 0.75
+            case .medium: break
+            case .large: fontSize *= 1.25
+            }
+
+            // Load font and unicode
+            guard let unicode = SFSymbols.shared.unicode(for: name),
+                  let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
+
+            // Create attributed string
+            let attrString = NSAttributedString(string: unicode, attributes: [
+                .font: font,
+                .foregroundColor: UIColor.blue
+            ])
+
+            // Size based on font
+            let imageSize = attrString.size()
+
+            // Calculate vertical offset to align baseline
+            let baselineOffset = (font.ascender - font.capHeight) / 2
+
+            // Render image with baseline correction
+            UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
+            attrString.draw(at: CGPoint(x: 0, y: baselineOffset))
+            let image = UIGraphicsGetImageFromCurrentImageContext()
+            UIGraphicsEndImageContext()
+
+            guard let cgImage = image?.cgImage else { return nil }
+            self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
         }
-
-        guard let unicode = SFSymbols.shared.unicode(for: name),
-              let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
-
-        let ctFont = CTFontCreateWithName(font.fontName as CFString, font.pointSize, nil)
-        let ascent = CTFontGetAscent(ctFont)
-        let descent = CTFontGetDescent(ctFont)
-        let lineHeight = ascent + descent
-
-        // Square canvas (like SF Symbols, slightly bigger than lineHeight to avoid clipping)
-        let size = lineHeight * 1.2
-        let imageSize = CGSize(width: size, height: size)
-
-        UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
-        guard let context = UIGraphicsGetCurrentContext() else { return nil }
-
-        // Flip coordinate system
-        context.translateBy(x: 0, y: imageSize.height)
-        context.scaleBy(x: 1.0, y: -1.0)
-
-        // Set text matrix
-        context.textMatrix = .identity
-
-        // Create attributed string
-        let attrString = NSAttributedString(string: unicode, attributes: [
-            .font: font,
-            .foregroundColor: UIColor.blue
-        ])
-
-        let line = CTLineCreateWithAttributedString(attrString)
-        let bounds = CTLineGetBoundsWithOptions(line, .useGlyphPathBounds)
-
-        // Compute x and y to centre line
-        let x = (imageSize.width - bounds.width)/2 - bounds.origin.x
-        let y = (imageSize.height - bounds.height)/2 - bounds.origin.y
-
-        context.textPosition = CGPoint(x: x, y: y)
-        CTLineDraw(line, context)
-
-        let image = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-
-        guard let cgImage = image?.cgImage else { return nil }
-        self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
-    }
-
 
 }
