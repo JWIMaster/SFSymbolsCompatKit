@@ -111,20 +111,28 @@ public extension UIImage {
             .font: font,
             .foregroundColor: UIColor.black
         ])
+        let originalSize = attrString.size()
 
-        let imageSize = attrString.size()
+        // Determine square size
+        let squareSide = max(originalSize.width, originalSize.height)
+        let squareSize = CGSize(width: squareSide, height: squareSide)
 
-        UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
+        UIGraphicsBeginImageContextWithOptions(squareSize, false, 0)
         guard let context = UIGraphicsGetCurrentContext() else { return nil }
 
         // Fill background with red
         UIColor.red.setFill()
-        context.fill(CGRect(origin: .zero, size: imageSize))
+        context.fill(CGRect(origin: .zero, size: squareSize))
 
-        // Draw the symbol glyph on top
-        attrString.draw(at: .zero)
+        // Calculate origin to center glyph
+        let origin = CGPoint(
+            x: (squareSide - originalSize.width) / 2,
+            y: (squareSide - originalSize.height) / 2
+        )
 
-        // Capture image
+        // Draw glyph centered
+        attrString.draw(at: origin)
+
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
