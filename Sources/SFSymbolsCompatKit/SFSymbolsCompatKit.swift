@@ -76,9 +76,11 @@ public class SFSymbols {
 }
 
 // MARK: - UIImage Backport Extension
+
 public extension UIImage {
 
     /// Backport SymbolConfiguration for iOS <13
+    @available(iOS, introduced: 6.0, obsoleted: 13.0)
     struct SymbolConfigurationA {
         public var pointSize: CGFloat
         public var weight: SymbolWeightA
@@ -90,6 +92,8 @@ public extension UIImage {
             self.scale = scale
         }
     }
+    
+    typealias SymbolConfiguration = SymbolConfigurationA
 
     /// Backport initializer for iOS 6–12
     @available(iOS, introduced: 6.0, obsoleted: 13.0)
@@ -101,7 +105,7 @@ public extension UIImage {
 
         let attrString = NSAttributedString(string: unicode, attributes: [
             .font: font,
-            .foregroundColor: UIColor.black
+            .foregroundColor: UIColor.blue
         ])
 
         var imageSize = attrString.size()
