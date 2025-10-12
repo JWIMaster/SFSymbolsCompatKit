@@ -19,22 +19,27 @@ public class SFSymbols {
         registerFonts()
     }
     
-    // MARK: Load glyph lookup JSON
+    // MARK: Load glyph lookup JSON from module bundle
     private func loadLookup() {
-        // Use main bundle for iOS 6 compatibility
-        guard let url = Bundle(for: SFSymbols.self).url(forResource: "glyph_lookup", withExtension: "json"),
+        // Use the bundle of this class as the module bundle
+        let bundle = Bundle(for: SFSymbols.self)
+        
+        guard let url = bundle.url(forResource: "glyph_lookup", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: [String: String]] else {
             print("Failed to load glyph lookup")
             return
         }
+        
         lookup = json
     }
     
-    // MARK: Register fonts safely
+    // MARK: Register custom fonts
     private func registerFonts() {
+        let bundle = Bundle(for: SFSymbols.self)
+        
         for weight in availableWeights {
-            guard let url = Bundle(for: SFSymbols.self).url(forResource: "SFSymbols-\(weight.rawValue)", withExtension: "ttf") else { continue }
+            guard let url = bundle.url(forResource: "SFSymbols-\(weight.rawValue)", withExtension: "ttf") else { continue }
             CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
         }
     }
@@ -61,18 +66,18 @@ public extension UIImage {
         guard let unicode = SFSymbols.shared.unicode(for: name, weight: weight),
               let font = SFSymbols.shared.font(weight: weight, size: pointSize) else { return nil }
         
-        // Use old NSFontAttributeName for iOS 6
+        // Use iOS 6 compatible NSAttributedString keys
         let attrString = NSAttributedString(string: unicode, attributes: [
             NSAttributedString.Key.font: font,
             NSAttributedString.Key.foregroundColor: color
         ])
         
-        // Size must be at least 1x1
+        // Ensure minimum size
         var size = attrString.size()
         if size.width < 1 { size.width = 1 }
         if size.height < 1 { size.height = 1 }
         
-        UIGraphicsBeginImageContextWithOptions(size, false, 1.0) // scale = 1 for iOS 6
+        UIGraphicsBeginImageContextWithOptions(size, false, 1.0) // scale 1.0 for iOS 6
         attrString.draw(at: CGPoint.zero)
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
