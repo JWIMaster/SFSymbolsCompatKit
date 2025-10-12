@@ -21,7 +21,7 @@ public class SFSymbols {
     private func loadLookup() {
         guard let url = Bundle.main.url(forResource: "glyph_lookup", withExtension: "json"),
               let data = try? Data(contentsOf: url),
-              let json = try? NSJSONSerialization.JSONObjectWithData(data, options: []) as? [String: [String: String]] else {
+              let json = try? NSJSONSerialization.jsonObject(with: data, options: []) as? [String: [String: String]] else {
             print("Failed to load glyph lookup")
             return
         }
@@ -30,8 +30,8 @@ public class SFSymbols {
     
     private func registerFonts() {
         for weight in availableWeights {
-            guard let url = NSBundle.mainBundle().URLForResource("SFSymbols-\(weight.rawValue)", withExtension: "ttf") else { continue }
-            CTFontManagerRegisterFontsForURL(url, .Process, nil)
+            guard let url = Bundle.main.url(forResource: "SFSymbols-\(weight.rawValue)", withExtension: "ttf") else { continue }
+            CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
         }
     }
     
@@ -58,8 +58,8 @@ public extension UIImage {
         
         // Draw the symbol safely
         let attrString = NSAttributedString(string: unicode, attributes: [
-            NSFontAttributeName: font,
-            NSForegroundColorAttributeName: color
+            NSAttributedString.Key.font: font,
+            NSAttributedString.Key.foregroundColor: color
         ])
         
         var size = attrString.size()
@@ -67,11 +67,10 @@ public extension UIImage {
         if size.height < 1 { size.height = 1 }
         
         UIGraphicsBeginImageContextWithOptions(size, false, 1.0) // fixed scale for iOS 6
-        attrString.drawAtPoint(CGPointZero)
+        attrString.draw(at: .zero)
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         
-        guard let cgImage = image?.CGImage else { return nil }
-        self.init(CGImage: cgImage)
+        guard let cgImage = image?.cgImage else { return nil }
     }
 }
