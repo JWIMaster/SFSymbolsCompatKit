@@ -1,5 +1,6 @@
 import UIKit
 import CoreText
+import ObjectiveC
 
 // MARK: - Symbol Weight
 public enum SymbolWeightA: String {
@@ -75,6 +76,11 @@ public class SFSymbols {
 
 // MARK: - UIImage Backport Extension
 
+private struct AssociatedKeys {
+    static var symbolName = "symbolName"
+    static var symbolFont = "symbolFont"
+}
+
 public extension UIImage {
 
     /// Backport SymbolConfiguration for iOS <13
@@ -107,10 +113,7 @@ public extension UIImage {
         guard let unicode = SFSymbols.shared.unicode(for: name),
               let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
 
-        let attrString = NSAttributedString(string: unicode, attributes: [
-            .font: font,
-            .foregroundColor: UIColor.black
-        ])
+        let attrString = NSAttributedString(string: unicode, attributes: [.font: font, .foregroundColor: UIColor.black])
         let imageSize = attrString.size()
 
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
@@ -120,9 +123,46 @@ public extension UIImage {
 
         guard let cgImage = image?.cgImage else { return nil }
         self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
+
+        // Store symbol name and font for path extraction
+        objc_setAssociatedObject(self, &AssociatedKeys.symbolName, name, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        objc_setAssociatedObject(self, &AssociatedKeys.symbolFont, font, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
 
+    /// Returns a CGPath representing the symbol glyph for this backport image
+    @available(iOS, introduced: 6.0, obsoleted: 13.0)
+    var symbolPath: CGPath? {
+        guard let name = objc_getAssociatedObject(self, &AssociatedKeys.symbolName) as? String,
+              let font = objc_getAssociatedObject(self, &AssociatedKeys.symbolFont) as? UIFont,
+              let unicode = SFSymbols.shared.unicode(for: name) else { return nil }
+
+        let attrString = NSAttributedString(string: unicode, attributes: [.font: font])
+        let line = CTLineCreateWithAttributedString(attrString)
+        let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+
+        let path = CGMutablePath()
+        for run in runs {
+            let glyphCount = CTRunGetGlyphCount(run)
+            for i in 0..<glyphCount {
+                var glyph = CGGlyph()
+                var position = CGPoint.zero
+                CTRunGetGlyphs(run, CFRange(location: i, length: 1), &glyph)
+                CTRunGetPositions(run, CFRange(location: i, length: 1), &position)
+                
+                if let runPath = CTFontCreatePathForGlyph(font, glyph, nil) {
+                    var t = CGAffineTransform(translationX: position.x, y: position.y)
+                    path.addPath(runPath, transform: t)
+                }
+            }
+        }
+
+        // Flip vertically to match UIKit coordinate system
+        var transform = CGAffineTransform(scaleX: 1, y: -1)
+        transform = transform.concatenating(CGAffineTransform(translationX: 0, y: size.height))
+        return path.copy(using: &transform)
+    }
 }
+
 
 
 
