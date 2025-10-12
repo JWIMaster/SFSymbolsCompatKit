@@ -96,8 +96,8 @@ public extension UIImage {
     typealias SymbolConfiguration = SymbolConfigurationA
 
     @available(iOS, introduced: 6.0, obsoleted: 13.0)
-    convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
-        let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
+    convenience init?(systemName name: String, withConfiguration config: UIImage.SymbolConfigurationA? = nil) {
+        let config = config ?? UIImage.SymbolConfigurationA()
 
         // Adjust font size according to scale
         var fontSize = config.pointSize * 1.22
@@ -111,18 +111,29 @@ public extension UIImage {
         guard let unicode = SFSymbols.shared.unicode(for: name),
               let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
 
+        // Measure the glyph bounding box
+        let ctFont = CTFontCreateWithName(font.fontName as CFString, font.pointSize, nil)
+        let uniChar: UniChar = unicode.utf16.first!
+        var glyph = CGGlyph()
+        guard CTFontGetGlyphsForCharacters(ctFont, [uniChar], &glyph, 1) else { return nil }
+
+        var boundingRect = CGRect.zero
+        CTFontGetBoundingRectsForGlyphs(ctFont, .default, &glyph, &boundingRect, 1)
+
+        // Full line height for the image
+        let lineHeight = font.ascender - font.descender
+        let imageSize = CGSize(width: boundingRect.width, height: lineHeight)
+
+        // Offset to center glyph visually
+        let glyphMid = boundingRect.midY
+        let lineMid = (font.ascender + font.descender) / 2
+        let verticalOffset = lineMid - glyphMid
+
         // Create attributed string
         let attrString = NSAttributedString(string: unicode, attributes: [
             .font: font,
             .foregroundColor: UIColor.black
         ])
-
-        // Use full line height to avoid clipping
-        let lineHeight = font.ascender - font.descender
-        let imageSize = CGSize(width: attrString.size().width, height: lineHeight)
-
-        // Vertical offset to center the symbol
-        let verticalOffset = (lineHeight - attrString.size().height) / 2
 
         // Render image
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
