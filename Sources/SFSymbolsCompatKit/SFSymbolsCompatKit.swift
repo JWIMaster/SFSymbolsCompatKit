@@ -96,38 +96,43 @@ public extension UIImage {
     typealias SymbolConfiguration = SymbolConfigurationA
 
     @available(iOS, introduced: 6.0, obsoleted: 13.0)
-    convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
-        let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
-
-        // Adjust font size according to scale
-        var fontSize = config.pointSize*1.22
+    convenience init?(systemName name: String, withConfiguration config: UIImage.SymbolConfigurationA? = nil, finalShift: CGFloat = 3) {
+        let config = config ?? UIImage.SymbolConfigurationA()
+        
+        // Scale the font
+        var fontSize = config.pointSize * 1.22
         switch config.scale {
         case .small: fontSize *= 0.75
         case .medium: break
         case .large: fontSize *= 1.25
         }
-
-        // Load font
+        
         guard let unicode = SFSymbols.shared.unicode(for: name),
               let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
-
-        // Create attributed string
+        
         let attrString = NSAttributedString(string: unicode, attributes: [
             .font: font,
             .foregroundColor: UIColor.black
         ])
-
-        // Size based on font
-        let imageSize = CGSize(width: attrString.size().width, height: attrString.size().height + 4)
-
-        // Render image
+        
+        let symbolSize = attrString.size()
+        
+        // Extra padding to avoid clipping
+        let lineHeight = font.ascender - font.descender
+        let padding: CGFloat = fontSize * 0.3
+        let imageSize = CGSize(width: symbolSize.width, height: lineHeight + padding + finalShift)
+        
+        // Center symbol vertically, then shift down by finalShift
+        let verticalOffset = ((imageSize.height - symbolSize.height) / 2) + finalShift
+        
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
-        attrString.draw(at: .init(x: 0, y: 8))
+        attrString.draw(at: CGPoint(x: 0, y: verticalOffset))
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
-
+        
         guard let cgImage = image?.cgImage else { return nil }
         self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
     }
+
 
 }
