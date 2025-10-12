@@ -113,8 +113,8 @@ public extension UIImage {
         ])
         let originalSize = attrString.size()
 
-        // Determine square size
-        let squareSide = max(originalSize.width, originalSize.height)
+        // Use the smaller dimension as the square size
+        let squareSide = min(originalSize.width, originalSize.height)
         let squareSize = CGSize(width: squareSide, height: squareSide)
 
         UIGraphicsBeginImageContextWithOptions(squareSize, false, 0)
@@ -124,13 +124,13 @@ public extension UIImage {
         UIColor.red.setFill()
         context.fill(CGRect(origin: .zero, size: squareSize))
 
-        // Calculate origin to center glyph
+        // Calculate origin to center glyph (may crop extra from larger side)
         let origin = CGPoint(
             x: (squareSide - originalSize.width) / 2,
             y: (squareSide - originalSize.height) / 2
         )
 
-        // Draw glyph centered
+        // Draw glyph
         attrString.draw(at: origin)
 
         let image = UIGraphicsGetImageFromCurrentImageContext()
