@@ -128,6 +128,7 @@ public extension UIImage {
 
         guard let cgImage = image?.cgImage else { return nil }
         self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
+        _ = self.withRenderingMode(.alwaysTemplate)
     }
 
 }
