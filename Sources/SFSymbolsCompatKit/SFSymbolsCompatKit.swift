@@ -120,14 +120,17 @@ public extension UIImage {
         // Size based on font
         let imageSize = attrString.size()
 
-        // Render image
+        /// Render image
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
         attrString.draw(at: .zero)
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
-        guard let cgImage = image?.withRenderingMode(.alwaysTemplate).cgImage else { return nil }
-        self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
+        guard let finalImage = image?.withRenderingMode(.alwaysTemplate) else { return nil }
+
+        // Initialise from the final image’s properties
+        self.init(cgImage: finalImage.cgImage!, scale: finalImage.scale, orientation: finalImage.imageOrientation)
+
     }
 
 }
