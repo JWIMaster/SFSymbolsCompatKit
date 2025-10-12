@@ -99,7 +99,7 @@ public extension UIImage {
     convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
         let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
 
-        // Adjust font size according to scale (keep your 1.22 factor)
+        // Adjust font size according to scale (keep your careful 1.22 factor)
         var fontSize = config.pointSize * 1.22
         switch config.scale {
         case .small: fontSize *= 0.75
@@ -117,23 +117,19 @@ public extension UIImage {
             .foregroundColor: UIColor.blue
         ])
 
-        // Compute glyph metrics
+        // Original offset calculation (works visually)
         let ascent = font.ascender
-        let descent = abs(font.descender)
-        let glyphHeight = ascent + descent
-        let imageWidth = ceil(attrString.size().width)
+        let descent = font.descender
+        let glyphHeight = ascent - descent
+        let yOffset = (attrString.size().height - glyphHeight) / 2 - descent
 
-        // Add extra vertical padding to match SF Symbols line metrics
-        let verticalPadding = fontSize * 0.1 // ~10% of font size, tweak if needed
-        let imageHeight = ceil(glyphHeight + verticalPadding * 2)
-        let imageSize = CGSize(width: imageWidth, height: imageHeight)
+        // Expand canvas slightly to prevent clipping
+        let padding: CGFloat = 2 // tweak if necessary
+        let imageSize = CGSize(width: ceil(attrString.size().width),
+                               height: ceil(attrString.size().height + padding * 2))
 
-        // Compute vertical offset for perfect centering
-        let yOffset = verticalPadding + descent + (imageHeight - glyphHeight - verticalPadding * 2) / 2 - descent
-
-        // Render image
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
-        attrString.draw(at: CGPoint(x: 0, y: yOffset))
+        attrString.draw(at: CGPoint(x: 0, y: yOffset + padding))
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
