@@ -99,7 +99,7 @@ public extension UIImage {
     convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
         let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
 
-        // Adjust font size according to scale (keep your careful 1.22 factor)
+        // Apply your 1.22 scaling and symbol scale
         var fontSize = config.pointSize * 1.22
         switch config.scale {
         case .small: fontSize *= 0.75
@@ -107,29 +107,28 @@ public extension UIImage {
         case .large: fontSize *= 1.25
         }
 
-        // Load font
+        // Load font and unicode
         guard let unicode = SFSymbols.shared.unicode(for: name),
               let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
 
-        // Create attributed string
         let attrString = NSAttributedString(string: unicode, attributes: [
             .font: font,
             .foregroundColor: UIColor.blue
         ])
 
-        // Original offset calculation (works visually)
+        // Compute exact frame using font metrics
         let ascent = font.ascender
-        let descent = font.descender
-        let glyphHeight = ascent - descent
-        let yOffset = (attrString.size().height - glyphHeight) / 2 - descent
+        let descent = abs(font.descender)
+        let glyphHeight = ascent + descent
+        let imageWidth = ceil(attrString.size().width)
+        let imageHeight = ceil(glyphHeight)
+        let imageSize = CGSize(width: imageWidth, height: imageHeight)
 
-        // Expand canvas slightly to prevent clipping
-        let padding: CGFloat = 2 // tweak if necessary
-        let imageSize = CGSize(width: ceil(attrString.size().width),
-                               height: ceil(attrString.size().height + padding * 2))
+        // Keep your offset calculation exactly as before
+        let yOffset = (attrString.size().height - (ascent - font.descender)) / 2 - font.descender
 
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
-        attrString.draw(at: CGPoint(x: 0, y: yOffset + padding))
+        attrString.draw(at: CGPoint(x: 0, y: yOffset))
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
