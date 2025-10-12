@@ -97,28 +97,32 @@ public extension UIImage {
 
     @available(iOS, introduced: 6.0, obsoleted: 13.0)
     convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
-        let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
+        let config = config ?? SymbolConfigurationA()
 
         // Adjust font size according to scale
-        var fontSize = config.pointSize*1.22
+        var fontSize = config.pointSize * 1.22
         switch config.scale {
         case .small: fontSize *= 0.75
         case .medium: break
         case .large: fontSize *= 1.25
         }
 
-        // Load font and unicode
         guard let unicode = SFSymbols.shared.unicode(for: name),
               let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
 
-        // Measure glyph metrics
         let ctFont = CTFontCreateWithName(font.fontName as CFString, font.pointSize, nil)
+
+        // Get font metrics
         let ascent = CTFontGetAscent(ctFont)
         let descent = CTFontGetDescent(ctFont)
-        let lineHeight = CTFontGetLeading(ctFont) + ascent + descent
+        let lineHeight = ascent + descent
 
-        // Create square frame
-        let imageSize = CGSize(width: lineHeight, height: lineHeight)
+        // Make square canvas based on lineHeight
+        let size = lineHeight * 1.1 // 10% buffer to avoid clipping
+        let imageSize = CGSize(width: size, height: size)
+
+        // Compute baseline offset to centre glyph
+        let baselineOffset = (imageSize.height - lineHeight)/2 + descent
 
         // Create attributed string
         let attrString = NSAttributedString(string: unicode, attributes: [
@@ -127,11 +131,9 @@ public extension UIImage {
         ])
 
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
-
-        // Compute vertical offset to center glyph
-        let yOffset = (imageSize.height - attrString.size().height) / 2
-        attrString.draw(at: CGPoint(x: (imageSize.width - attrString.size().width)/2, y: yOffset))
-
+        // Draw at x-centred, y-adjusted to baseline
+        let x = (imageSize.width - attrString.size().width)/2
+        attrString.draw(at: CGPoint(x: x, y: baselineOffset - ascent))
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
