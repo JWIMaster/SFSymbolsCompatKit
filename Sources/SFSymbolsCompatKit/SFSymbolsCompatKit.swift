@@ -100,7 +100,7 @@ public extension UIImage {
         let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
 
         // Adjust font size according to scale
-        var fontSize = config.pointSize*1.22
+        var fontSize = config.pointSize * 1.22
         switch config.scale {
         case .small: fontSize *= 0.75
         case .medium: break
@@ -114,23 +114,24 @@ public extension UIImage {
         // Create attributed string
         let attrString = NSAttributedString(string: unicode, attributes: [
             .font: font,
-            .foregroundColor: UIColor.black
+            .foregroundColor: UIColor.black // base mask colour for tinting
         ])
 
-        // Size based on font
+        // Render image
         let imageSize = attrString.size()
-
-        /// Render image
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
         attrString.draw(at: .zero)
-        let image = UIGraphicsGetImageFromCurrentImageContext()
+        let baseImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
-        guard let finalImage = image?.withRenderingMode(.alwaysTemplate) else { return nil }
+        guard let cgImage = baseImage?.cgImage else { return nil }
 
-        // Initialise from the final image’s properties
-        self.init(cgImage: finalImage.cgImage!, scale: finalImage.scale, orientation: finalImage.imageOrientation)
+        // Create UIImage
+        let rendered = UIImage(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
+            .withRenderingMode(.alwaysTemplate) // ✅ this is the critical point
 
+        self.init(cgImage: rendered.cgImage!, scale: rendered.scale, orientation: rendered.imageOrientation)
     }
+
 
 }
