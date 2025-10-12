@@ -96,46 +96,38 @@ public extension UIImage {
     typealias SymbolConfiguration = SymbolConfigurationA
 
     @available(iOS, introduced: 6.0, obsoleted: 13.0)
-    convenience init?(systemName name: String, withConfiguration config: UIImage.SymbolConfigurationA? = nil) {
-        let config = config ?? UIImage.SymbolConfigurationA()
-        
-        // Scale the font
-        var fontSize = config.pointSize * 1.22
+    convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
+        let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
+
+        // Adjust font size according to scale
+        var fontSize = config.pointSize*1.22
         switch config.scale {
         case .small: fontSize *= 0.75
         case .medium: break
         case .large: fontSize *= 1.25
         }
-        
+
+        // Load font
         guard let unicode = SFSymbols.shared.unicode(for: name),
               let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
-        
+
+        // Create attributed string
         let attrString = NSAttributedString(string: unicode, attributes: [
             .font: font,
             .foregroundColor: UIColor.black
         ])
-        
-        let symbolSize = attrString.size()
-        
-        // Compute line height and extra padding
-        let lineHeight = font.ascender - font.descender
-        let extraPadding: CGFloat = fontSize * 0.5 // 50% of font size for safety
-        
-        // Image height includes line height + padding + manual downward nudge
-        let downwardNudge: CGFloat = 10 // adjust visually
-        let imageSize = CGSize(width: symbolSize.width, height: lineHeight + extraPadding + abs(downwardNudge))
-        
-        // Center symbol vertically and apply downward nudge
-        let verticalOffset = ((imageSize.height - symbolSize.height) / 2) + downwardNudge
-        
+
+        // Size based on font
+        let imageSize = attrString.size()
+
+        // Render image
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
-        attrString.draw(at: CGPoint(x: 0, y: verticalOffset))
+        attrString.draw(at: .zero)
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
-        
+
         guard let cgImage = image?.cgImage else { return nil }
         self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
     }
-
 
 }
