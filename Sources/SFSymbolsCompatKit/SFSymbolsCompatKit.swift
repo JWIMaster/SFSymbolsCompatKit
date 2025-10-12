@@ -117,13 +117,13 @@ public extension UIImage {
         
         let symbolSize = attrString.size()
         
-        // Extra padding to avoid clipping
+        // Extra padding to prevent clipping
         let lineHeight = font.ascender - font.descender
         let padding: CGFloat = fontSize * 0.3
-        let imageSize = CGSize(width: symbolSize.width, height: lineHeight + padding + finalShift)
+        let imageSize = CGSize(width: symbolSize.width, height: lineHeight + padding + abs(finalShift))
         
-        // Center symbol vertically, then shift down by finalShift
-        let verticalOffset = ((imageSize.height - symbolSize.height) / 2) + finalShift
+        // Flip the sign: negative moves down visually
+        let verticalOffset = ((imageSize.height - symbolSize.height) / 2) - finalShift
         
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
         attrString.draw(at: CGPoint(x: 0, y: verticalOffset))
