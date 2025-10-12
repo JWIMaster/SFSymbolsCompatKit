@@ -99,8 +99,8 @@ public extension UIImage {
     convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
         let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
 
-        // Adjust font size according to scale
-        var fontSize = config.pointSize*1.22
+        // Adjust font size according to scale (keep your careful 1.22 factor)
+        var fontSize = config.pointSize * 1.22
         switch config.scale {
         case .small: fontSize *= 0.75
         case .medium: break
@@ -122,12 +122,21 @@ public extension UIImage {
 
         // Render image
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
-        attrString.draw(at: .zero)
+
+        // Vertical centering fix using font metrics
+        let ascent = font.ascender
+        let descent = font.descender
+        let glyphHeight = ascent - descent
+        let yOffset = (imageSize.height - glyphHeight) / 2 - descent
+
+        attrString.draw(at: CGPoint(x: 0, y: yOffset))
+
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
         guard let cgImage = image?.cgImage else { return nil }
         self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
     }
+
 
 }
