@@ -127,7 +127,7 @@ public extension UIImage {
 
         // Calculate original left padding
         let originalSize = attrString.size()
-        let leftPadding = tightBounds.minX * 0.8
+        let leftPadding = tightBounds.minX
 
         // Remove all padding and add original left padding to each side
         let paddedRect = CGRect(
