@@ -97,7 +97,7 @@ public extension UIImage {
     convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
         let config = config ?? SymbolConfigurationA()
 
-        var fontSize = config.pointSize * 1.22
+        var fontSize = config.pointSize*1.22
         switch config.scale {
         case .small: fontSize *= 0.75
         case .medium: break
@@ -111,53 +111,15 @@ public extension UIImage {
             .font: font,
             .foregroundColor: UIColor.black
         ])
+        let imageSize = attrString.size()
 
-        // Measure tight glyph bounds using CoreText
-        let line = CTLineCreateWithAttributedString(attrString)
-        let runs = CTLineGetGlyphRuns(line) as! [CTRun]
-
-        var tightBounds = CGRect.null
-        for run in runs {
-            let runCount = CTRunGetGlyphCount(run)
-            for i in 0..<runCount {
-                let glyphBounds = CTRunGetImageBounds(run, nil, CFRange(location: i, length: 1))
-                tightBounds = tightBounds.union(glyphBounds)
-            }
-        }
-
-        // Calculate original left padding
-        let originalSize = attrString.size()
-        let leftPadding = tightBounds.minX
-
-        // Remove all padding and add original left padding to each side
-        let paddedRect = CGRect(
-            x: 0,
-            y: 0,
-            width: tightBounds.width + leftPadding * 2,
-            height: tightBounds.height + leftPadding * 2
-        )
-
-        UIGraphicsBeginImageContextWithOptions(paddedRect.size, false, UIScreen.main.scale)
-        guard let context = UIGraphicsGetCurrentContext() else { return nil }
-        
-        context.translateBy(x: 0, y: paddedRect.height)
-        context.scaleBy(x: 1, y: -1)
-
-        
-        // Red background
-        //UIColor.red.setFill()
-        //context.fill(CGRect(origin: .zero, size: paddedRect.size))
-
-        // Draw glyph, offset to account for removed padding
-        context.translateBy(x: -tightBounds.minX + leftPadding, y: -tightBounds.minY + leftPadding)
-        CTLineDraw(line, context)
-
+        UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
+        attrString.draw(at: .zero)
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
         guard let cgImage = image?.cgImage else { return nil }
         self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
     }
-
 
 }
