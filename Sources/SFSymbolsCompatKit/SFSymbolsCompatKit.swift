@@ -6,22 +6,9 @@ public enum SymbolWeightA: String {
     case ultralight, thin, light, regular, medium, semibold, bold, heavy, black
 }
 
-// MARK: - Symbol Scale (like iOS 13)
+// MARK: - Symbol Scale
 public enum SymbolScaleA {
     case small, medium, large
-}
-
-// MARK: - Backport of UIImage.SymbolConfiguration
-public struct SymbolConfigurationA {
-    public var pointSize: CGFloat
-    public var weight: SymbolWeightA
-    public var scale: SymbolScaleA
-
-    public init(pointSize: CGFloat = 17, weight: SymbolWeightA = .regular, scale: SymbolScaleA = .medium) {
-        self.pointSize = pointSize
-        self.weight = weight
-        self.scale = scale
-    }
 }
 
 // MARK: - SFSymbols Manager
@@ -88,12 +75,26 @@ public class SFSymbols {
     }
 }
 
-// MARK: - UIImage Backport
+// MARK: - UIImage Backport Extension
 public extension UIImage {
 
+    /// Backport SymbolConfiguration for iOS <13
+    struct SymbolConfigurationA {
+        public var pointSize: CGFloat
+        public var weight: SymbolWeightA
+        public var scale: SymbolScaleA
+
+        public init(pointSize: CGFloat = 17, weight: SymbolWeightA = .regular, scale: SymbolScaleA = .medium) {
+            self.pointSize = pointSize
+            self.weight = weight
+            self.scale = scale
+        }
+    }
+
+    /// Backport initializer for iOS 6–12
     @available(iOS, introduced: 6.0, obsoleted: 13.0)
     convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
-        let config = config ?? SymbolConfigurationA() // defaults
+        let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
 
         guard let unicode = SFSymbols.shared.unicode(for: name),
               let font = SFSymbols.shared.font(weight: config.weight, size: config.pointSize) else { return nil }
