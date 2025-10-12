@@ -136,10 +136,16 @@ public extension UIImage {
             }
         }
 
-        // Render the symbol in a tight box
-        let imageSize = tightRect.size
+        // Expand tightRect to include the full font ascender/descender
+        let fullRect = CGRect(x: tightRect.origin.x,
+                              y: font.descender,
+                              width: tightRect.width,
+                              height: font.ascender - font.descender)
+
+        // Render the symbol in this safe box
+        let imageSize = fullRect.size
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
-        attrString.draw(at: CGPoint(x: -tightRect.origin.x, y: -tightRect.origin.y))
+        attrString.draw(at: CGPoint(x: -tightRect.origin.x, y: -tightRect.origin.y + font.ascender - fullRect.height))
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
