@@ -111,27 +111,42 @@ public extension UIImage {
             .font: font,
             .foregroundColor: UIColor.black
         ])
+
+        // Measure tight glyph bounds using CoreText
+        let line = CTLineCreateWithAttributedString(attrString)
+        let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+
+        var tightBounds = CGRect.null
+        for run in runs {
+            let runCount = CTRunGetGlyphCount(run)
+            for i in 0..<runCount {
+                let glyphBounds = CTRunGetImageBounds(run, nil, CFRange(location: i, length: 1))
+                tightBounds = tightBounds.union(glyphBounds)
+            }
+        }
+
+        // Calculate original left padding
         let originalSize = attrString.size()
+        let leftPadding = tightBounds.minX
 
-        // Use the smaller dimension as the square size
-        let squareSide = min(originalSize.width, originalSize.height)
-        let squareSize = CGSize(width: squareSide, height: squareSide)
-
-        UIGraphicsBeginImageContextWithOptions(squareSize, false, 0)
-        guard let context = UIGraphicsGetCurrentContext() else { return nil }
-
-        // Fill background with red
-        UIColor.red.setFill()
-        context.fill(CGRect(origin: .zero, size: squareSize))
-
-        // Calculate origin to center glyph (may crop extra from larger side)
-        let origin = CGPoint(
-            x: (squareSide - originalSize.width) / 2,
-            y: (squareSide - originalSize.height) / 2
+        // Remove all padding and add original left padding to each side
+        let paddedRect = CGRect(
+            x: 0,
+            y: 0,
+            width: tightBounds.width + leftPadding * 2,
+            height: tightBounds.height + leftPadding * 2
         )
 
-        // Draw glyph
-        attrString.draw(at: origin)
+        UIGraphicsBeginImageContextWithOptions(paddedRect.size, false, UIScreen.main.scale)
+        guard let context = UIGraphicsGetCurrentContext() else { return nil }
+
+        // Red background
+        UIColor.red.setFill()
+        context.fill(CGRect(origin: .zero, size: paddedRect.size))
+
+        // Draw glyph, offset to account for removed padding
+        context.translateBy(x: -tightBounds.minX + leftPadding, y: -tightBounds.minY + leftPadding)
+        CTLineDraw(line, context)
 
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
