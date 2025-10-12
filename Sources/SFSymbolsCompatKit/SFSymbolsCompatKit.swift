@@ -96,18 +96,18 @@ public extension UIImage {
     typealias SymbolConfiguration = SymbolConfigurationA
 
     @available(iOS, introduced: 6.0, obsoleted: 13.0)
-    convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
-        let config = config ?? SymbolConfigurationA() // default: 17pt, regular, medium
+    convenience init?(systemName name: String, withConfiguration config: UIImage.SymbolConfigurationA? = nil) {
+        let config = config ?? UIImage.SymbolConfigurationA() // default: 17pt, regular, medium
 
         // Adjust font size according to scale
-        var fontSize = config.pointSize*1.22
+        var fontSize = config.pointSize * 1.22
         switch config.scale {
         case .small: fontSize *= 0.75
         case .medium: break
         case .large: fontSize *= 1.25
         }
 
-        // Load font
+        // Load font and unicode
         guard let unicode = SFSymbols.shared.unicode(for: name),
               let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
 
@@ -120,14 +120,17 @@ public extension UIImage {
         // Size based on font
         let imageSize = attrString.size()
 
-        // Render image
+        // Offset so the font baseline aligns with the image baseline
+        let baselineOffset = font.ascender - font.capHeight
+
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
-        attrString.draw(at: .zero)
+        attrString.draw(at: CGPoint(x: 0, y: baselineOffset))
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
 
         guard let cgImage = image?.cgImage else { return nil }
         self.init(cgImage: cgImage, scale: UIScreen.main.scale, orientation: .up)
     }
+
 
 }
