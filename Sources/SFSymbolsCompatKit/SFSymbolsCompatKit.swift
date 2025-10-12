@@ -100,7 +100,7 @@ public extension UIImage {
     typealias SymbolConfiguration = SymbolConfigurationA
 
     @available(iOS, introduced: 6.0, obsoleted: 13.0)
-    convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil) {
+    convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil, tintColor: UIColor = .black) {
         let config = config ?? SymbolConfigurationA()
 
         var fontSize = config.pointSize*1.22
@@ -113,7 +113,7 @@ public extension UIImage {
         guard let unicode = SFSymbols.shared.unicode(for: name),
               let font = SFSymbols.shared.font(weight: config.weight, size: fontSize) else { return nil }
 
-        let attrString = NSAttributedString(string: unicode, attributes: [.font: font, .foregroundColor: UIColor.black])
+        let attrString = NSAttributedString(string: unicode, attributes: [.font: font, .foregroundColor: tintColor])
         let imageSize = attrString.size()
 
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
