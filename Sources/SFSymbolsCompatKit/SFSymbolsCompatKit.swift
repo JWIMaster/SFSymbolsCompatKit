@@ -119,11 +119,11 @@ public extension UIImage {
         
         // generous height to prevent clipping
         let lineHeight = font.ascender - font.descender
-        let padding: CGFloat = fontSize * 0.3 // 30% extra space above and below
+        let padding: CGFloat = fontSize * 0.3 // extra space above and below
         let imageSize = CGSize(width: symbolSize.width, height: lineHeight + padding)
         
-        // Vertical offset with extra downward nudge for visual alignment
-        let downwardNudge: CGFloat = fontSize * 0.08 // tweak this per weight/scale
+        // Correct vertical offset: negative nudge moves symbol up visually (curved down effect)
+        let downwardNudge: CGFloat = -fontSize * 0.08 // negative to move up
         let verticalOffset = (imageSize.height - symbolSize.height) / 2 + downwardNudge
         
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 0)
