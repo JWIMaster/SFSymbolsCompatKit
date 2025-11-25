@@ -99,7 +99,7 @@ public extension UIImage {
     
     typealias SymbolConfiguration = SymbolConfigurationA
 
-    @available(iOS, introduced: 6.0, obsoleted: 13.0)
+    @available(iOS, introduced: 6.0, deprecated: 13.0)
     convenience init?(systemName name: String, withConfiguration config: SymbolConfigurationA? = nil, tintColor: UIColor = .black) {
         let config = config ?? SymbolConfigurationA()
 
