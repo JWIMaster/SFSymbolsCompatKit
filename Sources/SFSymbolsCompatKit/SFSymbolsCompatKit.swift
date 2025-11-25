@@ -84,7 +84,7 @@ private struct AssociatedKeys {
 public extension UIImage {
 
     /// Backport SymbolConfiguration for iOS <13
-    @available(iOS, introduced: 6.0, obsoleted: 13.0)
+    @available(iOS, introduced: 6.0, deprecated: 13.0)
     struct SymbolConfigurationA {
         public var pointSize: CGFloat
         public var weight: SymbolWeightA
